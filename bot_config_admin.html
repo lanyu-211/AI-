@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 大模型管理中后台 - v2.2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1677ff;
+            --primary-hover: #4096ff;
+            --bg-body: #f0f2f5;
+            --bg-sidebar: #001529;
+            --bg-card: #ffffff;
+            --text-main: #1f1f1f;
+            --text-secondary: #8c8c8c;
+            --border-color: #f0f0f0;
+            --radius: 6px;
+            --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+            --transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 200px; background-color: var(--bg-sidebar);
+            display: flex; flex-direction: column; flex-shrink: 0; color: rgba(255, 255, 255, 0.65);
+        }
+
+        .logo {
+            padding: 20px; height: 64px; display: flex; align-items: center; gap: 12px;
+            color: white; font-weight: 600; font-size: 16px; background: rgba(255,255,255,0.05);
+        }
+
+        .nav-list { flex: 1; padding: 12px 0; }
+        .nav-item {
+            padding: 12px 24px; cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; gap: 10px; font-size: 14px;
+        }
+        .nav-item:hover { color: white; }
+        .nav-item.active { background-color: var(--primary-color); color: white; }
+
+        /* Main Wrapper */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        header {
+            height: 64px; background: white; padding: 0 24px; display: flex;
+            align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,0.08); z-index: 10;
+        }
+
+        .breadcrumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+        .breadcrumb span { cursor: pointer; transition: var(--transition); }
+        .breadcrumb span:hover { color: var(--primary-color); }
+        .breadcrumb b { color: var(--text-main); font-weight: 500; }
+
+        .content-container { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; }
+
+        /* General View Layouts */
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        /* Specific rule for Model Config view to handle its flex layout independently */
+        #view-model-config.active {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .page-header h2 { font-size: 20px; font-weight: 600; }
+
+        /* Data Grid & Cards */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+        .card {
+            background: white; border-radius: var(--radius); padding: 24px;
+            border: 1px solid var(--border-color); transition: var(--transition);
+            cursor: pointer; display: flex; flex-direction: column; gap: 12px; position: relative;
+        }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary-color); }
+        
+        .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #f5f5f5; color: #666; width: fit-content; text-transform: uppercase; font-weight: 600; }
+        .tag-blue { background: #e6f7ff; color: #1890ff; }
+        .title { font-size: 17px; font-weight: 600; color: var(--text-main); }
+        .desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        
+        .card-stats { border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .card-stats b { color: var(--primary-color); }
+
+        /* Panel for Details */
+        .detail-container { max-width: 900px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 24px; }
+        .panel { background: white; padding: 24px; border-radius: var(--radius); border: 1px solid var(--border-color); }
+        .panel-title { font-size: 15px; font-weight: 600; margin-bottom: 20px; padding-left: 12px; border-left: 3px solid var(--primary-color); display: flex; justify-content: space-between; align-items: center; }
+
+        /* Form Controls */
+        label { display: block; font-size: 14px; color: #333; margin-bottom: 8px; font-weight: 500; }
+        input[type="text"], input[type="password"], select, textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9;
+            border-radius: var(--radius); font-size: 14px; transition: var(--transition); outline: none;
+            font-family: inherit;
+        }
+        textarea { min-height: 100px; resize: vertical; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(24,144,255,0.1); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* Slider */
+        .slider-box { margin-bottom: 16px; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+
+        /* Buttons */
+        .btn { padding: 8px 16px; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; font-size: 14px; transition: var(--transition); display: inline-flex; align-items: center; gap: 4px; justify-content: center; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-ghost { background: transparent; border-color: #d9d9d9; color: #666; }
+        .btn-ghost:hover { border-color: var(--primary-color); color: var(--primary-color); }
+        .btn-danger { color: #ff4d4f; border: none; background: transparent; }
+        .btn-danger:hover { background: #fff1f0; }
+
+        /* Knowledge List in Config */
+        .kb-list { border: 1px solid var(--border-color); border-radius: var(--radius); }
+        .kb-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .kb-item:last-child { border-bottom: none; }
+        
+        .file-info { display: flex; align-items: center; gap: 12px; }
+        .file-icon { width: 30px; height: 30px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; text-transform: uppercase; flex-shrink: 0; }
+        .type-pdf { background: #fff1f0; color: #f5222d; }
+        .type-doc { background: #e6f7ff; color: #1890ff; }
+        .type-md { background: #f9f0ff; color: #722ed1; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: white; width: 640px; border-radius: 8px; padding: 24px; box-shadow: 0 6px 16px 0 rgba(0,0,0,0.08); max-height: 90vh; overflow-y: auto; }
+        .modal-header { font-size: 18px; font-weight: 600; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; }
+        .modal-footer { margin-top: 24px; text-align: right; display: flex; justify-content: flex-end; gap: 8px; }
+
+        /* Upload Modal Specifics */
+        .upload-area { border: 2px dashed #d9d9d9; border-radius: 8px; padding: 40px 20px; text-align: center; cursor: pointer; transition: var(--transition); background: #fafafa; margin-bottom: 20px; }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--primary-color); background: #f0f7ff; }
+        .upload-icon { font-size: 32px; color: var(--primary-color); margin-bottom: 12px; }
+        .upload-hint { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+        .format-tags { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+        .format-tag { font-size: 10px; padding: 2px 6px; border-radius: 3px; background: #eee; color: #888; border: 1px solid #ddd; }
+
+        .upload-progress-container { display: none; margin-top: 20px; }
+        .progress-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; }
+
+        /* Mount KB Modal */
+        .ent-list-item { padding: 12px 16px; cursor: pointer; font-size: 14px; transition: var(--transition); border-bottom: 1px solid #f0f0f0; color: var(--text-main); }
+        .ent-list-item:hover { background: #f0f7ff; }
+        .ent-list-item.active { background: #e6f7ff; color: var(--primary-color); font-weight: 500; border-right: 2px solid var(--primary-color); }
+        
+        .mount-kb-card { padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: var(--transition); }
+        .mount-kb-card:hover { border-color: var(--primary-color); }
+        .mount-kb-card.selected { border-color: var(--primary-color); background: #fefefe; box-shadow: 0 0 0 1px var(--primary-color) inset; }
+        .mount-kb-card input[type="checkbox"] { width: 16px; height: 16px; pointer-events: none; }
+
+        /* Toast */
+        #toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-20px); background: white; padding: 10px 24px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #52c41a; color: #52c41a; opacity: 0; transition: all 0.3s; z-index: 1000; }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* Multi-column layout for Config */
+        .config-editor-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0; /* Important for preventing flex children from overflowing */
+            background: #fff;
+            margin: 0 -24px -24px -24px; /* Pull to the edges of padding */
+        }
+
+        /* Middle Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f7f8fa;
+            position: relative;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .msg-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .msg-ai {
+            align-self: flex-start;
+            background: white;
+            color: var(--text-main);
+            border-bottom-left-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .chat-input-area {
+            padding: 20px 24px;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Right Sidebar Config */
+        .config-sidebar {
+            width: 420px;
+            overflow-y: auto;
+            padding: 24px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 8px;
+            background: white;
+        }
+
+        .config-sidebar .panel {
+            padding: 0;
+            border: none;
+        }
+
+        .config-sidebar .panel-title {
+            margin-bottom: 16px;
+        }
+
+        .sidebar-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modal for New Model -->
+    <div class="modal-overlay" id="newModelModal">
+        <div class="modal-content">
+            <div class="modal-header">新增模型实例</div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="form-grid">
+                    <div>
+                        <label>模型名称</label>
+                        <input type="text" id="nm-name" placeholder="例如: GPT-4o-Mini">
+                    </div>
+                    <div>
+                        <label>供应商 / 类型</label>
+                        <select id="nm-type">
+                            <option value="OpenAI">OpenAI</option>
+                            <option value="Anthropic">Anthropic</option>
+                            <option value="Local">Local</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label>API Key (密钥)</label>
+                    <input type="password" id="nm-key" placeholder="在此输入 API 访问秘钥">
+                </div>
+                <div>
+                    <label>功能描述</label>
+                    <input type="text" id="nm-desc" placeholder="简要说明其在业务中的用途">
+                </div>
+                
+                <div style="border-top:1px dashed #eee; padding-top:16px">
+                    <label style="color:var(--primary-color)">初始化推理参数</label>
+                    <div class="form-grid">
+                        <div class="slider-box">
+                            <div class="slider-label"><span>生成温度</span><b id="nm-val-temp">0.7</b></div>
+                            <input type="range" id="nm-input-temp" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('nm-val-temp').innerText=this.value">
+                        </div>
+                        <div class="slider-box">
+                            <div class="slider-label"><span>最大 Token</span><b id="nm-val-out">2048</b></div>
+                            <input type="range" id="nm-input-out" min="256" max="8192" step="256" value="2048" oninput="document.getElementById('nm-val-out').innerText=this.value">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="border-top:1px dashed #eee; padding-top:16px">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+                        <label style="color:var(--primary-color); margin:0">默认知识库关联</label>
+                        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px; height: auto;" onclick="openMountKbModal('new')">+ 选择库</button>
+                    </div>
+                    <div id="nm-kb-list" class="kb-list" style="border-color: #f0f0f0;">
+                        <div style="padding: 16px; text-align: center; color: #bfbfbf; font-size: 13px;">暂未绑定任何知识集合</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('newModelModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAddNewModel()">完成并入库</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Document Upload -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">上传新文档</div>
+            <div id="uploadForm">
+                <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📤</div>
+                    <div style="font-weight: 500;">点击或拖拽文件到此处上传</div>
+                    <div class="upload-hint">支持多文件并行上传，单文件不超过 20MB</div>
+                    <input type="file" id="fileInput" multiple style="display: none" onchange="handleFileSelect(event)">
+                    <div class="format-tags">
+                        <span class="format-tag">PDF</span>
+                        <span class="format-tag">WORD</span>
+                        <span class="format-tag">MD</span>
+                        <span class="format-tag">TXT</span>
+                    </div>
+                </div>
+                <div id="selectedFiles" class="kb-list" style="border: none; max-height: 150px; overflow-y: auto;"></div>
+                
+                <div class="upload-progress-container" id="uploadProgress">
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="progress-text"><span>正在解析并存储文档...</span><span id="progressPercent">0%</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('uploadModal')">取消</button>
+                <button class="btn btn-primary" id="startUploadBtn" onclick="startSimulatedUpload()" disabled>开始上传</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for New KB/Enterprise -->
+    <div class="modal-overlay" id="addGenericModal">
+        <div class="modal-content" style="width: 480px;">
+            <div class="modal-header" id="genModalTitle">新增项目</div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div><label id="genModalLabel">项目名称</label><input type="text" id="genModalInput"></div>
+                <div><label>详细描述</label><textarea id="genModalDesc" rows="3"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('addGenericModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAddGeneric()">确认提交</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Mounting KBs to Model -->
+    <div class="modal-overlay" id="mountKbModal">
+        <div class="modal-content" style="width: 720px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="margin-bottom: 16px; padding-bottom: 12px;">挂载知识库资源</div>
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="mountKbSearch" placeholder="搜索知识库名称或描述..." oninput="filterMountKbs()" style="background: #f7f8fa; border: 1px solid var(--border-color);">
+            </div>
+            <div style="display: flex; flex: 1; border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden; min-height: 340px; max-height: 480px;">
+                <!-- Left: Enterprises -->
+                <div style="width: 200px; background: #fafafa; border-right: 1px solid var(--border-color); overflow-y: auto;" id="mountKbEntList"></div>
+                <!-- Right: KBs -->
+                <div style="flex: 1; overflow-y: auto; padding: 16px; background: #fff;" id="mountKbList"></div>
+            </div>
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button class="btn btn-ghost" onclick="closeModal('mountKbModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmMountKb()">确认挂载 (<span id="mountKbCount">0</span>)</button>
+            </div>
+        </div>
+    </div>
+
+    <aside>
+        <div class="logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--primary-color)"><circle cx="12" cy="12" r="10"/></svg>
+            AI 管理后台
+        </div>
+        <div class="nav-list" id="sidebarNav">
+            <div class="nav-item">仪表盘</div>
+            <div class="nav-item active" data-target="models">大模型管理</div>
+            <div class="nav-item" data-target="kb-enterprises">知识库列表</div>
+            <div class="nav-item">API 秘钥池</div>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header>
+            <div class="breadcrumb" id="breadcrumb">
+                <!-- Breadcrumb injected by JS -->
+            </div>
+            <div class="user-info" style="font-size:14px">系统管理员</div>
+        </header>
+
+        <div class="content-container">
+            
+            <!-- View: Model List -->
+            <div id="view-models" class="view-section active">
+                <div class="page-header" style="align-items: center;">
+                    <div style="flex: 1;"><h2>大模型管理</h2><p style="color:var(--text-secondary); font-size:13px; margin-top:4px">统一管理所有模型实例的运行状态及核心逻辑参数</p></div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="search-models" placeholder="搜索模型名称或描述..." style="width: 220px; border-radius: 4px;" onkeydown="if(event.key==='Enter') renderViewData()">
+                        <button class="btn btn-ghost" onclick="renderViewData()" style="padding: 10px 14px;">搜索</button>
+                        <button class="btn btn-primary" onclick="openNewModelModal()" style="margin-left: 8px;">+ 新增模型</button>
+                    </div>
+                </div>
+                <div class="grid" id="modelGrid"></div>
+            </div>
+
+            <!-- View: Model Config Detail -->
+            <div id="view-model-config" class="view-section">
+                <div class="page-header" style="flex-shrink: 0; margin-bottom: 0; padding: 16px 24px; background: #fff; border-bottom: 1px solid var(--border-color); margin: -24px -24px 0 -24px;">
+                    <div>
+                        <h2 id="cfg-title-display">模型配置与调试</h2>
+                        <p style="color:var(--text-secondary); font-size:13px; margin-top:4px">实时调整推理参数并验证模型输出效果</p>
+                    </div>
+                </div>
+
+                <div class="config-editor-layout">
+                    <!-- Middle: Chat Container -->
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="msg-bubble msg-ai">你好！我是当前配置的模型实例。你可以尝试修改右侧的参数，然后在这里发送消息来测试我的回复效果。</div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chatInput" placeholder="输入测试指令，按回车发送..." onkeydown="if(event.key==='Enter') sendTestMessage()">
+                            <button class="btn btn-primary" onclick="sendTestMessage()">发送</button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Config Sidebar -->
+                    <div class="config-sidebar">
+                        <div class="panel">
+                            <span class="sidebar-section-title">基础身份</span>
+                            <div style="display: flex; flex-direction: column; gap: 16px;">
+                                <div><label>模型名称</label><input type="text" id="cfg-name"></div>
+                                <div>
+                                    <label>供应商 / 底层引擎</label>
+                                    <select id="cfg-type">
+                                        <option value="OpenAI">OpenAI (GPT)</option>
+                                        <option value="Anthropic">Anthropic (Claude)</option>
+                                        <option value="Local">Local (Ollama/vLLM)</option>
+                                    </select>
+                                </div>
+                                <div><label>API 密钥</label><input type="password" id="cfg-key"></div>
+                                <div><label>应用描述</label><textarea id="cfg-desc" style="min-height: 60px; font-size: 13px;"></textarea></div>
+                            </div>
+                        </div>
+
+                        <div style="height: 1px; background: var(--border-color); margin: 8px 0;"></div>
+
+                        <div class="panel">
+                            <span class="sidebar-section-title">推理策略</span>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="slider-box">
+                                    <div class="slider-label"><span>生成温度 (Temp)</span><b id="cfg-val-temp">0.7</b></div>
+                                    <input type="range" id="cfg-input-temp" min="0" max="2" step="0.1">
+                                </div>
+                                <div class="slider-box">
+                                    <div class="slider-label"><span>核采样 (Top-P)</span><b id="cfg-val-topP">1.0</b></div>
+                                    <input type="range" id="cfg-input-topP" min="0" max="1" step="0.05">
+                                </div>
+                                <div class="slider-box">
+                                    <div class="slider-label"><span>上下文记忆 (轮次)</span><b id="cfg-val-mem">20</b></div>
+                                    <input type="range" id="cfg-input-mem" min="5" max="100" step="5">
+                                </div>
+                                <div class="slider-box">
+                                    <div class="slider-label"><span>最大 Token 输出</span><b id="cfg-val-out">2048</b></div>
+                                    <input type="range" id="cfg-input-out" min="256" max="8192" step="256">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="height: 1px; background: var(--border-color); margin: 8px 0;"></div>
+
+                        <div class="panel">
+                            <span class="sidebar-section-title">关联知识库资源</span>
+                            <div id="cfg-kb-list" class="kb-list"></div>
+                            <button class="btn btn-ghost" style="margin-top:12px; font-size:12px; width:100%; border-style: dashed;" onclick="openMountKbModal('detail')">+ 挂载新知识库</button>
+                        </div>
+
+                        <div class="sidebar-actions">
+                            <button class="btn btn-ghost" style="flex: 1" onclick="navTo('models')">退出编辑</button>
+                            <button class="btn btn-primary" style="flex: 1.5" onclick="saveModelConfig()">保存并发布</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View: Enterprise List -->
+            <div id="view-kb-enterprises" class="view-section">
+                <div class="page-header" style="align-items: center;">
+                    <div style="flex: 1;"><h2>企业管理主体</h2><p style="color:var(--text-secondary); font-size:13px; margin-top:4px">选择对应的企业主体，直接管理其下属的所有知识库</p></div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="search-enterprises" placeholder="搜索主体名称或描述..." style="width: 220px; border-radius: 4px;" onkeydown="if(event.key==='Enter') renderViewData()">
+                        <button class="btn btn-ghost" onclick="renderViewData()" style="padding: 10px 14px;">搜索</button>
+                        <button class="btn btn-primary" onclick="openGenericModal('enterprise')" style="margin-left: 8px;">+ 创建主体</button>
+                    </div>
+                </div>
+                <div class="grid" id="enterpriseGrid"></div>
+            </div>
+
+            <!-- View: KB List within Enterprise -->
+            <div id="view-kb-list" class="view-section">
+                <div class="page-header">
+                    <div><h2 id="kbListPageTitle">知识库集合</h2><p style="color:var(--text-secondary); font-size:13px; margin-top:4px">管理企业下属的所有知识库及文档内容</p></div>
+                    <button class="btn btn-primary" onclick="openGenericModal('kb')">+ 创建知识库</button>
+                </div>
+                <div class="grid" id="kbGrid"></div>
+            </div>
+
+            <!-- View: KB Documents Detail -->
+            <div id="view-kb-detail" class="view-section">
+                <div class="page-header">
+                    <div><h2 id="kbDetailName">知识库详情</h2><p id="kbDetailDesc" style="color:var(--text-secondary); font-size:13px; margin-top:4px"></p></div>
+                    <button class="btn btn-primary" onclick="openUploadModal()">+ 上传新文档</button>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">文档列表</div>
+                    <div class="kb-list" id="docList"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast">操作成功</div>
+
+    <script>
+        // --- Data ---
+        let modelData = [
+            { id: 'gpt-4', name: 'GPT-4 Global', type: 'OpenAI', desc: '全能型顶级模型，支持复杂逻辑推理', key: 'sk-proj-xxxxxx', temp:0.7, topP:1, mem:20, out:4096, kb: ['前端开发规范 2024', '企业规章库'] },
+            { id: 'claude-3', name: 'Claude 3 Opus', type: 'Anthropic', desc: '长文本长上下文创作模型', key: 'ak-ant-xxxxxx', temp:1.0, topP:0.9, mem:50, out:8192, kb: [] }
+        ];
+
+        let enterpriseData = [
+            { id: 'e1', name: '字节跳动', desc: '全球领先的科技平台，专注于内容架构。', kbCount: 3 },
+            { id: 'e2', name: '阿里巴巴', desc: '顶级电商与云计算服务，侧重云端基建。', kbCount: 2 }
+        ];
+
+        let kbListData = [
+            { id: 'kb1', entId: 'e1', name: '前端开发规范 2024', desc: '统一的代码审计、组件封装及状态管理标准。', files: ['coding-style.pdf', 'api-design.md'] },
+            { id: 'kb2', entId: 'e1', name: '后端系统架构', desc: '微服务、领域驱动设计及分布式架构参考。', files: ['service-mesh.pdf'] },
+            { id: 'kb3', entId: 'e1', name: '企业规章库', desc: '员工手册、社保公积金及招聘流程。', files: ['manual-2024.pdf'] },
+            { id: 'kb4', entId: 'e2', name: '云产品白皮书', desc: 'ECS, OSS 等产品技术规格说明书。', files: ['ecs-v5.pdf'] }
+        ];
+
+        // --- Controller ---
+        let state = {
+            view: 'models',
+            ent: null,
+            kb: null,
+            currentModelId: null
+        };
+
+        function navTo(view, params = {}) {
+            state.view = view;
+            if(params.ent) state.ent = enterpriseData.find(x => x.id === params.ent);
+            if(params.kb) state.kb = kbListData.find(x => x.id === params.kb);
+            if(params.mid) state.currentModelId = params.mid;
+
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + (view === 'kb-items' ? 'kb-list' : view)).classList.add('active');
+
+            // Sidebar Highlight
+            document.querySelectorAll('.nav-item').forEach(it => it.classList.remove('active'));
+            const sideItems = document.querySelectorAll('.nav-item');
+            if(view.includes('model')) sideItems[1].classList.add('active');
+            else if(view.startsWith('kb')) sideItems[2].classList.add('active');
+
+            renderBreadcrumb();
+            renderViewData();
+        }
+
+        function renderBreadcrumb() {
+            const bc = document.getElementById('breadcrumb');
+            let path = [];
+            if(state.view.includes('model')) {
+                path.push('<span onclick="navTo(\'models\')">大模型管理</span>');
+                if(state.view === 'model-config') path.push('<b>详情参数配置</b>');
+            } else {
+                path.push('<span onclick="navTo(\'kb-enterprises\')">知识库列表</span>');
+                if(state.ent && state.view !== 'kb-enterprises') {
+                    path.push(`<span onclick="navTo('kb-list', {ent:'${state.ent.id}'})">${state.ent.name}</span>`);
+                }
+                if(state.view === 'kb-detail') {
+                    path.push(`<b>${state.kb.name}</b>`);
+                } else if(state.view === 'kb-enterprises') {
+                    path.push('<b>全部企业</b>');
+                } else if(state.view === 'kb-list') {
+                    path.push('<b>库项集合</b>');
+                }
+            }
+            bc.innerHTML = path.join(' / ');
+        }
+
+        function renderViewData() {
+            if(state.view === 'models') {
+                const q = (document.getElementById('search-models')?.value || '').toLowerCase();
+                const filteredModels = modelData.filter(m => m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q) || m.type.toLowerCase().includes(q));
+                document.getElementById('modelGrid').innerHTML = filteredModels.map(m => `
+                    <div class="card" onclick="openModelDetail('${m.id}')">
+                        <span class="tag tag-blue">${m.type}</span>
+                        <div class="title">${m.name}</div>
+                        <div class="desc">${m.desc}</div>
+                        <div class="card-stats">关联库: <b>${m.kb.length}</b> <button class="btn btn-ghost" style="font-size:12px; padding:2px 10px">配置详情</button></div>
+                    </div>
+                `).join('');
+                if(filteredModels.length === 0) document.getElementById('modelGrid').innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #888;">没有找到匹配的模型...</div>';
+            } else if(state.view === 'model-config') {
+                const m = modelData.find(x => x.id === state.currentModelId);
+                document.getElementById('cfg-name').value = m.name;
+                document.getElementById('cfg-type').value = m.type;
+                document.getElementById('cfg-key').value = m.key || '********';
+                document.getElementById('cfg-desc').value = m.desc;
+                syncSliders(m);
+                renderDetailKbList(m.kb);
+            } else if(state.view === 'kb-enterprises') {
+                const q = (document.getElementById('search-enterprises')?.value || '').toLowerCase();
+                const filteredEnts = enterpriseData.filter(e => e.name.toLowerCase().includes(q) || e.desc.toLowerCase().includes(q));
+                document.getElementById('enterpriseGrid').innerHTML = filteredEnts.map(e => `
+                    <div class="card" onclick="navTo('kb-list', {ent:'${e.id}'})">
+                        <div class="title" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <span>${e.name}</span>
+                            <button class="btn btn-ghost" style="padding:2px 8px; font-size:12px; height:auto;" onclick="event.stopPropagation(); openGenericModal('enterprise', '${e.id}')">编辑</button>
+                        </div>
+                        <div class="desc">${e.desc}</div>
+                        <div class="card-stats">包含知识库: <b>${e.kbCount}</b> <span style="color:var(--primary-color)">管理资源 ></span></div>
+                    </div>
+                `).join('');
+                if(filteredEnts.length === 0) document.getElementById('enterpriseGrid').innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #888;">没有找到匹配的主体...</div>';
+            } else if(state.view === 'kb-list') {
+                document.getElementById('kbListPageTitle').innerText = state.ent.name + ' - 知识库列表';
+                const list = kbListData.filter(k => k.entId === state.ent.id);
+                document.getElementById('kbGrid').innerHTML = list.map(k => `
+                    <div class="card" onclick="navTo('kb-detail', {ent:'${state.ent.id}', kb:'${k.id}'})">
+                        <div class="title" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <span>${k.name}</span>
+                            <button class="btn btn-ghost" style="padding:2px 8px; font-size:12px; height:auto;" onclick="event.stopPropagation(); openGenericModal('kb', '${k.id}')">编辑</button>
+                        </div>
+                        <div class="desc">${k.desc}</div>
+                        <div class="card-stats">文档数量: <b>${k.files.length}</b> <button class="btn btn-primary" style="font-size:12px; padding:2px 10px">详情与文档</button></div>
+                    </div>
+                `).join('');
+            } else if(state.view === 'kb-detail') {
+                document.getElementById('kbDetailName').innerText = state.kb.name;
+                document.getElementById('kbDetailDesc').innerText = state.kb.desc;
+                renderDocList();
+            }
+        }
+
+        function renderDocList() {
+            document.getElementById('docList').innerHTML = state.kb.files.map((f, i) => {
+                const ext = f.split('.').pop();
+                return `
+                    <div class="kb-item">
+                        <div class="file-info">
+                            <div class="file-icon type-${ext}">${ext}</div>
+                            ${f}
+                        </div>
+                        <div style="display:flex; gap:8px">
+                            <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px">预览</button>
+                            <button class="btn btn-danger" style="font-size:11px; padding:4px 8px" onclick="deleteDoc(${i})">删除</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // --- Document Upload & Action Logic ---
+        let currentFiles = [];
+
+        function openUploadModal() {
+            currentFiles = [];
+            document.getElementById('selectedFiles').innerHTML = '';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('startUploadBtn').disabled = true;
+            document.getElementById('uploadModal').style.display = 'flex';
+            setupDragAndDrop();
+        }
+
+        function setupDragAndDrop() {
+            const dz = document.getElementById('dropZone');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+                dz.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+            });
+            dz.addEventListener('dragover', () => dz.classList.add('dragover'));
+            dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+            dz.addEventListener('drop', (e) => {
+                dz.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+        }
+
+        function handleFileSelect(e) { handleFiles(e.target.files); }
+
+        function handleFiles(files) {
+            const allowed = ['pdf', 'doc', 'docx', 'md', 'txt'];
+            for (let f of files) {
+                const ext = f.name.split('.').pop().toLowerCase();
+                if (allowed.includes(ext)) {
+                    currentFiles.push(f);
+                } else {
+                    alert(`不支持格式: ${f.name} (仅限 PDF, Word, MD, TXT)`);
+                }
+            }
+            renderSelectedFiles();
+        }
+
+        function renderSelectedFiles() {
+            const container = document.getElementById('selectedFiles');
+            container.innerHTML = currentFiles.map((f, i) => `
+                <div class="kb-item" style="padding: 8px 0; border-bottom: 1px solid #f5f5f5">
+                    <div class="file-info" style="font-size: 13px">
+                        <span class="file-icon type-${f.name.split('.').pop().toLowerCase()}">${f.name.split('.').pop().toLowerCase()}</span>
+                        ${f.name}
+                    </div>
+                    <span style="color:#ff4d4f; cursor:pointer; font-size:12px" onclick="currentFiles.splice(${i},1);renderSelectedFiles()">删除</span>
+                </div>
+            `).join('');
+            document.getElementById('startUploadBtn').disabled = currentFiles.length === 0;
+        }
+
+        function startSimulatedUpload() {
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('startUploadBtn').disabled = true;
+            let prog = 0;
+            const interval = setInterval(() => {
+                prog += 5;
+                document.getElementById('progressFill').style.width = prog + '%';
+                document.getElementById('progressPercent').innerText = prog + '%';
+                if (prog >= 100) {
+                    clearInterval(interval);
+                    currentFiles.forEach(f => state.kb.files.push(f.name));
+                    renderDocList();
+                    showToast(`成功上传 ${currentFiles.length} 份文档`);
+                    setTimeout(() => closeModal('uploadModal'), 500);
+                }
+            }, 50);
+        }
+
+        function deleteDoc(index) {
+            if(confirm('确定要永久删除此文档吗？')) {
+                state.kb.files.splice(index, 1);
+                renderDocList();
+                showToast('文档已移除');
+            }
+        }
+
+        // --- Model Management ---
+        let pendingModelKbData = [];
+        function openNewModelModal() {
+            pendingModelKbData = [];
+            renderPendingKbList();
+            document.getElementById('newModelModal').style.display = 'flex';
+        }
+        function renderPendingKbList() {
+            const list = document.getElementById('nm-kb-list');
+            list.innerHTML = pendingModelKbData.length ? pendingModelKbData.map((k, i) => `<div class="kb-item"><span>${k}</span> <span style="color:#ff4d4f; cursor:pointer; font-size:11px;" onclick="pendingModelKbData.splice(${i},1);renderPendingKbList()">移除</span></div>`).join('') : '<div style="padding: 16px; text-align: center; color: #bfbfbf; font-size: 13px;">暂未绑定</div>';
+        }
+        // addNewKbToPendingModel was replaced by openMountKbModal
+        function confirmAddNewModel() {
+            const name = document.getElementById('nm-name').value;
+            const key = document.getElementById('nm-key').value;
+            if(!name || !key) return alert('名称和密钥必填');
+            modelData.push({
+                id: 'm-' + Date.now(), name: name, type: document.getElementById('nm-type').value,
+                desc: document.getElementById('nm-desc').value || '新导入实例', key: key,
+                temp: parseFloat(document.getElementById('nm-input-temp').value),
+                topP: 1.0, mem: 20, out: parseInt(document.getElementById('nm-input-out').value),
+                kb: [...pendingModelKbData]
+            });
+            renderViewData(); closeModal('newModelModal'); showToast('模型已就位');
+        }
+        function openModelDetail(id) { navTo('model-config', { mid: id }); }
+        function renderDetailKbList(kbs) {
+            const list = document.getElementById('cfg-kb-list');
+            list.innerHTML = kbs.length ? kbs.map((k, i) => `<div class="kb-item"><span>${k}</span> <button class="btn btn-danger" style="font-size:11px; padding:2px 8px" onclick="unboundInDetail(${i})">解除</button></div>`).join('') : '<div style="padding: 16px; text-align: center; color: #bfbfbf;">无关联</div>';
+        }
+        function unboundInDetail(index) {
+            const m = modelData.find(x => x.id === state.currentModelId);
+            m.kb.splice(index, 1); renderDetailKbList(m.kb); showToast('已成功解除绑定');
+        }
+        // addKbInDetail was replaced by openMountKbModal
+        function saveModelConfig() {
+            const m = modelData.find(x => x.id === state.currentModelId);
+            m.name = document.getElementById('cfg-name').value;
+            m.type = document.getElementById('cfg-type').value;
+            m.key = document.getElementById('cfg-key').value;
+            m.desc = document.getElementById('cfg-desc').value;
+            m.temp = parseFloat(document.getElementById('cfg-input-temp').value);
+            m.topP = parseFloat(document.getElementById('cfg-input-topP').value);
+            m.mem = parseInt(document.getElementById('cfg-input-mem').value);
+            m.out = parseInt(document.getElementById('cfg-input-out').value);
+            renderViewData(); showToast('配置固化成功');
+        }
+
+        // --- Simulated Chat Logic ---
+        function sendTestMessage() {
+            const input = document.getElementById('chatInput');
+            const container = document.getElementById('chatMessages');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'msg-bubble msg-user';
+            userMsg.innerText = text;
+            container.appendChild(userMsg);
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            // Simulate AI response
+            setTimeout(() => {
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'msg-bubble msg-ai';
+                const temp = document.getElementById('cfg-input-temp').value;
+                const mName = document.getElementById('cfg-name').value;
+                aiMsg.innerText = `[模拟回复] 收到指令！当前模型：${mName}，生成温度已按您的参数设定为 ${temp}。正在基于关联的知识库进行检索并推理...`;
+                container.appendChild(aiMsg);
+                container.scrollTop = container.scrollHeight;
+            }, 800);
+        }
+        function syncSliders(m) {
+            const keys = ['temp', 'topP', 'mem', 'out'];
+            keys.forEach(k => {
+                const input = document.getElementById('cfg-input-'+k);
+                const valDisp = document.getElementById('cfg-val-'+k);
+                input.value = m[k]; valDisp.innerText = m[k];
+                input.oninput = (e) => valDisp.innerText = e.target.value;
+            });
+        }
+
+        // --- Mount KB Modal Logic ---
+        let mountKbMode = 'detail';
+        let mountKbSelected = new Set();
+        let mountKbCurrentEnt = null;
+
+        function openMountKbModal(mode = 'detail') {
+            mountKbMode = mode;
+            mountKbSelected = new Set();
+            
+            if (mode === 'detail') {
+                const m = modelData.find(x => x.id === state.currentModelId);
+                m.kb.forEach(k => mountKbSelected.add(k));
+            } else {
+                pendingModelKbData.forEach(k => mountKbSelected.add(k));
+            }
+
+            document.getElementById('mountKbCount').innerText = mountKbSelected.size;
+            document.getElementById('mountKbModal').style.display = 'flex';
+            document.getElementById('mountKbSearch').value = '';
+            
+            if (enterpriseData.length > 0) {
+                mountKbCurrentEnt = enterpriseData[0].id;
+            }
+            renderMountEntList();
+            renderMountKbList();
+        }
+
+        function renderMountEntList() {
+            const list = document.getElementById('mountKbEntList');
+            list.innerHTML = enterpriseData.map(e => `
+                <div class="ent-list-item ${mountKbCurrentEnt === e.id ? 'active' : ''}" onclick="selectMountEnt('${e.id}')">
+                    ${e.name}
+                </div>
+            `).join('');
+        }
+
+        function selectMountEnt(entId) {
+            mountKbCurrentEnt = entId;
+            renderMountEntList();
+            renderMountKbList();
+        }
+
+        function filterMountKbs() {
+            renderMountKbList();
+        }
+
+        function renderMountKbList() {
+            const list = document.getElementById('mountKbList');
+            const q = document.getElementById('mountKbSearch').value.toLowerCase();
+            
+            let kbs = kbListData;
+            if (mountKbCurrentEnt) kbs = kbs.filter(k => k.entId === mountKbCurrentEnt);
+            if (q) kbs = kbs.filter(k => k.name.toLowerCase().includes(q) || k.desc.toLowerCase().includes(q));
+
+            if (kbs.length === 0) {
+                list.innerHTML = '<div style="padding: 24px; text-align: center; color: #bfbfbf; font-size: 13px;">没有找到符合条件的知识库</div>';
+                return;
+            }
+
+            list.innerHTML = kbs.map(k => {
+                const isSelected = mountKbSelected.has(k.name);
+                return `
+                    <div class="mount-kb-card ${isSelected ? 'selected' : ''}" onclick="toggleMountKb('${k.name}')">
+                        <div style="flex: 1; padding-right: 12px;">
+                            <div class="title" style="font-size: 14px; margin-bottom: 4px;">${k.name}</div>
+                            <div class="desc" style="font-size: 12px; height: auto; -webkit-line-clamp: 1; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical;">${k.desc}</div>
+                        </div>
+                        <input type="checkbox" ${isSelected ? 'checked' : ''}>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleMountKb(kbName) {
+            if (mountKbSelected.has(kbName)) {
+                mountKbSelected.delete(kbName);
+            } else {
+                mountKbSelected.add(kbName);
+            }
+            document.getElementById('mountKbCount').innerText = mountKbSelected.size;
+            renderMountKbList();
+        }
+
+        function confirmMountKb() {
+            if (mountKbMode === 'detail') {
+                const m = modelData.find(x => x.id === state.currentModelId);
+                m.kb = Array.from(mountKbSelected);
+                renderDetailKbList(m.kb);
+            } else {
+                pendingModelKbData = Array.from(mountKbSelected);
+                renderPendingKbList();
+            }
+            closeModal('mountKbModal');
+            showToast('挂载资源已更新');
+        }
+
+        // --- Generic Modals ---
+        let editGenericId = null;
+        let editGenericType = null;
+        
+        function openGenericModal(type, editId = null) {
+            editGenericType = type;
+            editGenericId = editId;
+            
+            const titles = { enterprise: editId ? '编辑企业主体' : '新增企业主体', kb: editId ? '编辑知识库' : '创建知识库' };
+            const labels = { enterprise: '企业全称', kb: '库名称' };
+            
+            document.getElementById('genModalTitle').innerText = titles[type];
+            document.getElementById('genModalLabel').innerText = labels[type];
+            
+            if (editId) {
+                const dataList = type === 'enterprise' ? enterpriseData : kbListData;
+                const item = dataList.find(x => x.id === editId);
+                document.getElementById('genModalInput').value = item.name;
+                document.getElementById('genModalDesc').value = item.desc;
+            } else {
+                document.getElementById('genModalInput').value = '';
+                document.getElementById('genModalDesc').value = '';
+            }
+            
+            document.getElementById('addGenericModal').style.display = 'flex';
+        }
+        
+        function confirmAddGeneric() {
+            const n = document.getElementById('genModalInput').value.trim();
+            const d = document.getElementById('genModalDesc').value.trim();
+            if(!n) return alert('名称不能为空');
+            
+            if (editGenericId) {
+                const dataList = editGenericType === 'enterprise' ? enterpriseData : kbListData;
+                const item = dataList.find(x => x.id === editGenericId);
+                item.name = n;
+                item.desc = d;
+                renderViewData();
+                showToast('信息修改成功');
+            } else {
+                showToast('已申请录入'); 
+            }
+            
+            closeModal('addGenericModal');
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        document.getElementById('sidebarNav').addEventListener('click', (e) => {
+            const trg = e.target.getAttribute('data-target');
+            if(trg) navTo(trg);
+        });
+        navTo('models');
+    </script>
+</body>
+</html>
