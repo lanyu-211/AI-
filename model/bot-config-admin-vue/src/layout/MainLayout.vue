@@ -20,6 +20,9 @@
         <el-menu-item index="/enterprises">
           <span>企业管理主体</span>
         </el-menu-item>
+        <el-menu-item index="/ai-chat">
+          <span>AI 模型对话</span>
+        </el-menu-item>
         <el-menu-item index="/api-keys" disabled>
           <span>API 秘钥池</span>
         </el-menu-item>
@@ -94,6 +97,8 @@ const breadcrumbs = computed(() => {
     } else {
       pathArr.push({ title: '全部企业' })
     }
+  } else if (route.path.startsWith('/ai-chat')) {
+    pathArr.push({ title: 'AI 模型对话' })
   }
 
   return pathArr

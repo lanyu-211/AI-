@@ -6,6 +6,7 @@ const ModelConfigView = () => import('@/views/ModelConfigView.vue')
 const EnterprisesView = () => import('@/views/EnterprisesView.vue')
 const KbListView = () => import('@/views/KbListView.vue')
 const KbDetailView = () => import('@/views/KbDetailView.vue')
+const AiChatView = () => import('@/views/AiChatView.vue')
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -42,6 +43,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'KbDetail',
         component: KbDetailView,
         meta: { title: '知识库详情' }
+      },
+      {
+        path: 'ai-chat',
+        name: 'AiChat',
+        component: AiChatView,
+        meta: { title: 'AI 模型对话' }
       }
     ]
   }
