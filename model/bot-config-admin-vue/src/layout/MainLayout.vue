@@ -23,6 +23,13 @@
         <el-menu-item index="/ai-chat">
           <span>AI 模型对话</span>
         </el-menu-item>
+        <el-menu-item index="/usage">
+          <span>统计报表</span>
+        </el-menu-item>
+        <el-menu-item index="/monitor">
+          <span>性能监控</span>
+        </el-menu-item>
+
         <el-menu-item index="/api-keys" disabled>
           <span>API 秘钥池</span>
         </el-menu-item>
@@ -99,7 +106,12 @@ const breadcrumbs = computed(() => {
     }
   } else if (route.path.startsWith('/ai-chat')) {
     pathArr.push({ title: 'AI 模型对话' })
+  } else if (route.path.startsWith('/usage')) {
+    pathArr.push({ title: '统计报表' })
+  } else if (route.path.startsWith('/monitor')) {
+    pathArr.push({ title: '性能监控' })
   }
+
 
   return pathArr
 })
