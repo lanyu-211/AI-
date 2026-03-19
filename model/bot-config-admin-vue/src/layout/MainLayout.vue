@@ -29,6 +29,9 @@
         <el-menu-item index="/monitor">
           <span>性能监控</span>
         </el-menu-item>
+        <el-menu-item index="/doc-analysis">
+          <span>文档分析</span>
+        </el-menu-item>
 
         <el-menu-item index="/api-keys" disabled>
           <span>API 秘钥池</span>
@@ -110,6 +113,8 @@ const breadcrumbs = computed(() => {
     pathArr.push({ title: '统计报表' })
   } else if (route.path.startsWith('/monitor')) {
     pathArr.push({ title: '性能监控' })
+  } else if (route.path.startsWith('/doc-analysis')) {
+    pathArr.push({ title: '文档分析' })
   }
 
 

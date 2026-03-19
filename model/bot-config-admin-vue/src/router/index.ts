@@ -9,6 +9,7 @@ const KbDetailView = () => import('@/views/KbDetailView.vue')
 const AiChatView = () => import('@/views/AiChatView.vue')
 const UsageStatsView = () => import('@/views/UsageStatsView.vue')
 const PerfMonitorView = () => import('@/views/PerfMonitorView.vue')
+const DocAnalysisView = () => import('@/views/DocAnalysisView.vue')
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -64,6 +65,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'PerfMonitor',
         component: PerfMonitorView,
         meta: { title: '性能监控' }
+      },
+      {
+        path: 'doc-analysis',
+        name: 'DocAnalysis',
+        component: DocAnalysisView,
+        meta: { title: '文档分析' }
       }
 
     ]
