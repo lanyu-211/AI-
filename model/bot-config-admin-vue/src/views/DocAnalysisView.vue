@@ -53,13 +53,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
-import HistorySidebar from '@/components/DocAnalysis/HistorySidebar.vue'
-import UploadArea from '@/components/DocAnalysis/UploadArea.vue'
-import ChatPanel from '@/components/DocAnalysis/ChatPanel.vue'
-import PreviewPanel from '@/components/DocAnalysis/PreviewPanel.vue'
+import HistorySidebar from '../components/DocAnalysis/HistorySidebar.vue'
+import UploadArea from '../components/DocAnalysis/UploadArea.vue'
+import ChatPanel from '../components/DocAnalysis/ChatPanel.vue'
+import PreviewPanel from '../components/DocAnalysis/PreviewPanel.vue'
+
+// 接口定义
+interface Message {
+  role: 'user' | 'ai'
+  content: string
+}
+
+interface DocSession {
+  id: string
+  title: string
+  content: string
+  messages: Message[]
+}
 
 // 状态管理
 const isSidebarCollapsed = ref(false)
@@ -68,16 +81,27 @@ const isParsing = ref(false)
 const isTyping = ref(false)
 const progress = ref(0)
 const currentSessionId = ref('')
-const chatPanelRef = ref<any>(null)
+const chatPanelRef = ref<InstanceType<typeof ChatPanel> | null>(null)
+let parsingTimer: ReturnType<typeof setInterval> | null = null
 
 // 模拟历史数据
-const historyList = ref([
-  { id: '1', title: '深度学习研究论文.pdf', content: '这是一篇关于深度学习在图像识别领域应用的学术论文...', messages: [
-    { role: 'ai', content: '您好！我已完成该论文的解析。这篇论文主要探讨了卷积神经网络（CNN）在低光照场景下的优化算法。您可以就其核心结论或实验方法向我提问。' }
-  ] },
-  { id: '2', title: '2024年第一季度财报.docx', content: '公司2024年Q1总营收同比增长15%...', messages: [
-    { role: 'ai', content: '财报分析已就绪。数据显示公司在研发投入上显著增加。' }
-  ] }
+const historyList = ref<DocSession[]>([
+  { 
+    id: '1', 
+    title: '深度学习研究论文.pdf', 
+    content: '这是一篇关于深度学习在图像识别领域应用的学术论文...', 
+    messages: [
+      { role: 'ai', content: '您好！我已完成该论文的解析。这篇论文主要探讨了卷积神经网络（CNN）在低光照场景下的优化算法。您可以就其核心结论或实验方法向我提问。' }
+    ] 
+  },
+  { 
+    id: '2', 
+    title: '2024年第一季度财报.docx', 
+    content: '公司2024年Q1总营收同比增长15%...', 
+    messages: [
+      { role: 'ai', content: '财报分析已就绪。数据显示公司在研发投入上显著增加。' }
+    ] 
+  }
 ])
 
 const currentSession = computed(() => {
@@ -94,11 +118,14 @@ const handleUpload = (file: UploadFile) => {
   isUploaded.value = false
   progress.value = 0
   
+  if (parsingTimer) clearInterval(parsingTimer)
+  
   // 模拟解析进度
-  const timer = setInterval(() => {
+  parsingTimer = setInterval(() => {
     progress.value += 10
     if (progress.value >= 100) {
-      clearInterval(timer)
+      if (parsingTimer) clearInterval(parsingTimer)
+      parsingTimer = null
       completeParsing(file.name)
     }
   }, 200)
@@ -109,7 +136,7 @@ const completeParsing = (fileName: string) => {
   isUploaded.value = true
   
   const newId = String(Date.now())
-  const newSession = {
+  const newSession: DocSession = {
     id: newId,
     title: fileName,
     content: `这是关于“${fileName}”的内容解析结果...\n\n文档摘要：本文件详细描述了相关业务流程及其关键控制点。\n主要关键词：流程优化、系统集成、风险管控。\n\n在实际生产环境中，此处会展示通过 OCR 或 PDF 解析器提取的结构化文本。`,
@@ -130,13 +157,17 @@ const handleSendMessage = (text: string) => {
   
   // 模拟 AI 回答
   isTyping.value = true
-  chatPanelRef.value?.scrollToBottom()
+  setTimeout(() => {
+    chatPanelRef.value?.scrollToBottom()
+  }, 50)
   
   setTimeout(() => {
     isTyping.value = false
     const aiResponse = `基于文档内容，针对您提到的“${text}”，我认为：文档在第三章中明确指出，这种情况应该按照标准的 SOP 进行处理，以确保数据的准确性和一致性。`
     currentSession.value?.messages.push({ role: 'ai', content: aiResponse })
-    chatPanelRef.value?.scrollToBottom()
+    setTimeout(() => {
+      chatPanelRef.value?.scrollToBottom()
+    }, 50)
   }, 1000)
 }
 
@@ -144,6 +175,10 @@ const handleNewUpload = () => {
   isUploaded.value = false
   isParsing.value = false
   currentSessionId.value = ''
+  if (parsingTimer) {
+    clearInterval(parsingTimer)
+    parsingTimer = null
+  }
 }
 
 const handleSelectSession = (id: string) => {
@@ -168,6 +203,10 @@ const handleDeleteSession = (id: string) => {
     }
   })
 }
+
+onUnmounted(() => {
+  if (parsingTimer) clearInterval(parsingTimer)
+})
 </script>
 
 <style scoped>
