@@ -65,10 +65,10 @@
         </div>
         
         <div class="kb-list">
-          <template v-if="formData.kb.length">
+          <template v-if="formData.kb && formData.kb.length">
             <div class="kb-item" v-for="(k, idx) in formData.kb" :key="idx">
               <span>{{ k }}</span>
-              <el-button link type="danger" size="small" @click="formData.kb.splice(idx,1)">移除</el-button>
+              <el-button link type="danger" size="small" @click="formData.kb && formData.kb.splice(idx,1)">移除</el-button>
             </div>
           </template>
           <div v-else style="padding: 16px; text-align: center; color: #bfbfbf; font-size:13px;">
