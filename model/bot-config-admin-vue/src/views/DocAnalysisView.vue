@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import HistorySidebar from '../components/DocAnalysis/HistorySidebar.vue'
@@ -203,6 +203,14 @@ const handleDeleteSession = (id: string) => {
     }
   })
 }
+
+// 适配 Pinmark 伪单页切换
+watch(currentSessionId, (newId) => {
+  const pageId = newId ? `doc-analysis-${newId}` : 'doc-analysis-upload'
+  // @ts-ignore
+  window.__PINMARK_PAGE__ = pageId
+  window.dispatchEvent(new Event('pinmark:pagechange'))
+}, { immediate: true })
 
 onUnmounted(() => {
   if (parsingTimer) clearInterval(parsingTimer)
