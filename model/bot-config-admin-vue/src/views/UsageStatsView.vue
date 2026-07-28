@@ -69,15 +69,15 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { useAppStore } from '@/stores/appStore'
 
 const appStore = useAppStore()
 const timeRange = ref('7d')
-const tokenChartRef = ref<HTMLElement | null>(null)
-const costChartRef = ref<HTMLElement | null>(null)
+const tokenChartRef = ref(null)
+const costChartRef = ref(null)
 
 const modelRanking = ref([
   { name: 'GPT-4 Global', usage: '1.2M', percent: 45 },

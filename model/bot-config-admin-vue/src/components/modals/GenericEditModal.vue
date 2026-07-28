@@ -23,16 +23,16 @@
   </el-dialog>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, watch } from 'vue'
 import { useAppStore } from '@/stores/appStore'
 import { ElMessage } from 'element-plus'
 
-const props = defineProps<{
-  visible: boolean
-  type: 'enterprise' | 'kb'
-  editId: string | null
-}>()
+const props = defineProps({
+  visible: Boolean,
+  type: String,
+  editId: { type: String, default: null }
+})
 
 const emit = defineEmits(['update:visible', 'success'])
 const store = useAppStore()

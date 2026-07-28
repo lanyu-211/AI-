@@ -52,27 +52,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, onUnmounted, watch } from 'vue'
+<script setup>
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { UploadFile } from 'element-plus'
 import HistorySidebar from '../components/DocAnalysis/HistorySidebar.vue'
 import UploadArea from '../components/DocAnalysis/UploadArea.vue'
 import ChatPanel from '../components/DocAnalysis/ChatPanel.vue'
 import PreviewPanel from '../components/DocAnalysis/PreviewPanel.vue'
-
-// 接口定义
-interface Message {
-  role: 'user' | 'ai'
-  content: string
-}
-
-interface DocSession {
-  id: string
-  title: string
-  content: string
-  messages: Message[]
-}
 
 // 状态管理
 const isSidebarCollapsed = ref(false)
@@ -81,11 +67,11 @@ const isParsing = ref(false)
 const isTyping = ref(false)
 const progress = ref(0)
 const currentSessionId = ref('')
-const chatPanelRef = ref<InstanceType<typeof ChatPanel> | null>(null)
-let parsingTimer: ReturnType<typeof setInterval> | null = null
+const chatPanelRef = ref(null)
+let parsingTimer = null
 
 // 模拟历史数据
-const historyList = ref<DocSession[]>([
+const historyList = ref([
   { 
     id: '1', 
     title: '深度学习研究论文.pdf', 
@@ -113,7 +99,7 @@ const currentDocContent = computed(() => currentSession.value?.content || '')
 const currentMessages = computed(() => currentSession.value?.messages || [])
 
 // 方法
-const handleUpload = (file: UploadFile) => {
+const handleUpload = (file) => {
   isParsing.value = true
   isUploaded.value = false
   progress.value = 0
@@ -131,17 +117,17 @@ const handleUpload = (file: UploadFile) => {
   }, 200)
 }
 
-const completeParsing = (fileName: string) => {
+const completeParsing = (fileName) => {
   isParsing.value = false
   isUploaded.value = true
   
   const newId = String(Date.now())
-  const newSession: DocSession = {
+  const newSession = {
     id: newId,
     title: fileName,
-    content: `这是关于“${fileName}”的内容解析结果...\n\n文档摘要：本文件详细描述了相关业务流程及其关键控制点。\n主要关键词：流程优化、系统集成、风险管控。\n\n在实际生产环境中，此处会展示通过 OCR 或 PDF 解析器提取的结构化文本。`,
+    content: '这是关于 ' + fileName + ' 的内容解析结果...\n\n文档摘要：本文件详细描述了相关业务流程及其关键控制点。\n主要关键词：流程优化、系统集成、风险管控。\n\n在实际生产环境中，此处会展示通过 OCR 或 PDF 解析器提取的结构化文本。',
     messages: [
-      { role: 'ai', content: `文档《${fileName}》解析成功。我是您的 AI 助手，现在您可以针对这份文档的内容向我提问，我会结合原文为您解答。` }
+      { role: 'ai', content: '文档《' + fileName + '》解析成功。我是您的 AI 助手，现在您可以针对这份文档的内容向我提问，我会结合原文为您解答。' }
     ]
   }
   
@@ -149,7 +135,7 @@ const completeParsing = (fileName: string) => {
   currentSessionId.value = newId
 }
 
-const handleSendMessage = (text: string) => {
+const handleSendMessage = (text) => {
   if (!currentSession.value) return
   
   // 添加用户消息
@@ -158,15 +144,17 @@ const handleSendMessage = (text: string) => {
   // 模拟 AI 回答
   isTyping.value = true
   setTimeout(() => {
-    chatPanelRef.value?.scrollToBottom()
+    if (chatPanelRef.value) chatPanelRef.value.scrollToBottom()
   }, 50)
   
   setTimeout(() => {
     isTyping.value = false
-    const aiResponse = `基于文档内容，针对您提到的“${text}”，我认为：文档在第三章中明确指出，这种情况应该按照标准的 SOP 进行处理，以确保数据的准确性和一致性。`
-    currentSession.value?.messages.push({ role: 'ai', content: aiResponse })
+    const replyText = '处理成功'
+    if (currentSession.value) {
+      currentSession.value.messages.push({ role: 'ai', content: replyText })
+    }
     setTimeout(() => {
-      chatPanelRef.value?.scrollToBottom()
+      if (chatPanelRef.value) chatPanelRef.value.scrollToBottom()
     }, 50)
   }, 1000)
 }
@@ -181,13 +169,13 @@ const handleNewUpload = () => {
   }
 }
 
-const handleSelectSession = (id: string) => {
+const handleSelectSession = (id) => {
   currentSessionId.value = id
   isUploaded.value = true
   isParsing.value = false
 }
 
-const handleDeleteSession = (id: string) => {
+const handleDeleteSession = (id) => {
   ElMessageBox.confirm('确定要删除这段对话历史吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -207,7 +195,6 @@ const handleDeleteSession = (id: string) => {
 // 适配 Pinmark 伪单页切换
 watch(currentSessionId, (newId) => {
   const pageId = newId ? `doc-analysis-${newId}` : 'doc-analysis-upload'
-  // @ts-ignore
   window.__PINMARK_PAGE__ = pageId
   window.dispatchEvent(new Event('pinmark:pagechange'))
 }, { immediate: true })

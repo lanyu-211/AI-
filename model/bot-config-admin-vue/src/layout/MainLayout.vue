@@ -64,7 +64,7 @@
   </el-container>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Location } from '@element-plus/icons-vue' // 只是作为标志代替原生的 svg
@@ -82,7 +82,7 @@ const activeMenu = computed(() => {
 
 // 动态面包屑逻辑
 const breadcrumbs = computed(() => {
-  const pathArr: {title: string, path?: string}[] = []
+  const pathArr = []
 
   if (route.path.startsWith('/model-config')) {
     pathArr.push({ title: '大模型管理', path: '/models' })
@@ -93,13 +93,13 @@ const breadcrumbs = computed(() => {
     pathArr.push({ title: '知识库列表', path: '/enterprises' })
     
     if (route.path.startsWith('/kb-list')) {
-      const entId = route.params.entId as string
+      const entId = route.params.entId
       const ent = appStore.enterprises.find(e => e.id === entId)
       if (ent) pathArr.push({ title: ent.name, path: `/kb-list/${entId}` })
       if (route.name === 'KbList') pathArr.push({ title: '库项集合' })
     } else if (route.path.startsWith('/kb-detail')) {
-      const entId = route.params.entId as string
-      const kbId = route.params.kbId as string
+      const entId = route.params.entId
+      const kbId = route.params.kbId
       const ent = appStore.enterprises.find(e => e.id === entId)
       const kb = appStore.kbList.find(k => k.id === kbId)
       if (ent) pathArr.push({ title: ent.name, path: `/kb-list/${entId}` })

@@ -2,7 +2,7 @@
   <router-view />
 </template>
 
-<script setup lang="ts">
+<script setup>
 // 根组件仅负责路由渲染
 </script>
 

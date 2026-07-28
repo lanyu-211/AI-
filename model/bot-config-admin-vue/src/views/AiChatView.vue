@@ -242,7 +242,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { 
   Search, Promotion, Plus, ChatLineRound, 
@@ -252,20 +252,6 @@ import {
   Close, Delete
 } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import type { UploadFile } from 'element-plus'
-
-interface Message {
-  role: 'user' | 'ai'
-  content: string
-  files?: Array<{ name: string }>
-}
-
-interface ChatHistory {
-  id: string
-  title: string
-  messages: Message[]
-  timestamp: number
-}
 
 const selectedModel = ref('gpt-4o')
 const inputMessage = ref('')
@@ -273,17 +259,17 @@ const searchQuery = ref('')
 const isSidebarCollapsed = ref(false)
 const isTyping = ref(false)
 const currentChatId = ref('1')
-const messages = ref<Message[]>([])
-const messageListRef = ref<HTMLElement | null>(null)
-const attachedFiles = ref<UploadFile[]>([])
-const hoveredMsg = ref<number | null>(null)
+const messages = ref([])
+const messageListRef = ref(null)
+const attachedFiles = ref([])
+const hoveredMsg = ref(null)
 
 // 模拟头像
 const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4'
 const aiAvatar = 'https://api.dicebear.com/7.x/bottts/svg?seed=Aneka&backgroundColor=d1d4f9'
 
 // 模拟历史记录（带时间戳）
-const historyList = ref<ChatHistory[]>([
+const historyList = ref([
   { 
     id: '1', 
     title: '关于大模型配置的问题', 
@@ -324,7 +310,7 @@ const scrollToBottom = async () => {
   }
 }
 
-const selectChat = (chat: ChatHistory) => {
+const selectChat = (chat) => {
   currentChatId.value = chat.id
   messages.value = [...chat.messages]
   scrollToBottom()
@@ -332,7 +318,7 @@ const selectChat = (chat: ChatHistory) => {
 
 const createNewChat = () => {
   const newId = String(Date.now())
-  const newChat: ChatHistory = {
+  const newChat = {
     id: newId,
     title: '新对话',
     timestamp: Date.now(),
@@ -343,7 +329,7 @@ const createNewChat = () => {
   if (isSidebarCollapsed.value) isSidebarCollapsed.value = false
 }
 
-const deleteHistory = (id: string) => {
+const deleteHistory = (id) => {
   const index = historyList.value.findIndex(item => item.id === id)
   if (index > -1) {
     historyList.value.splice(index, 1)
@@ -373,25 +359,25 @@ const clearHistory = () => {
 }
 
 // 功能增强
-const copyContent = (text: string) => {
+const copyContent = (text) => {
   navigator.clipboard.writeText(text)
   ElMessage.success('已复制到剪贴板')
 }
 
-const regenerate = (index: number) => {
+const regenerate = (index) => {
   messages.value.splice(index)
   sendMessage()
 }
 
-const handleFileChange = (file: UploadFile) => {
+const handleFileChange = (file) => {
   attachedFiles.value.push(file)
 }
 
-const removeFile = (index: number) => {
+const removeFile = (index) => {
   attachedFiles.value.splice(index, 1)
 }
 
-const handleEnter = (e: KeyboardEvent) => {
+const handleEnter = (e) => {
   if (e.shiftKey) return
   sendMessage()
 }

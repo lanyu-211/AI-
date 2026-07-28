@@ -103,19 +103,18 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAppStore, type ModelData } from '@/stores/appStore'
+import { useAppStore } from '@/stores/appStore'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
 
-const modelId = computed(() => route.params.id as string)
-// 为了不污染 Store，做一层对象的深拷贝进行双向绑定
-const localModel = ref<ModelData | null>(null)
+const modelId = computed(() => route.params.id)
+const localModel = ref(null)
 
 watch(() => modelId.value, (id) => {
   const m = store.models.find(x => x.id === id)
@@ -124,10 +123,10 @@ watch(() => modelId.value, (id) => {
 
 // 对话逻辑
 const inputMsg = ref('')
-const chatMessages = ref<{role: 'user'|'ai', content: string}[]>([
+const chatMessages = ref([
   { role: 'ai', content: '你好！我是当前配置的模型实例。你可以尝试修改右侧的参数，然后在这里发送消息来测试我的回复效果。' }
 ])
-const chatMessagesRef = ref<HTMLElement | null>(null)
+const chatMessagesRef = ref(null)
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -155,7 +154,7 @@ const sendMessage = () => {
   }, 800)
 }
 
-const unboundKb = (idx: number) => {
+const unboundKb = (idx) => {
   if (localModel.value) {
     localModel.value.kb.splice(idx, 1)
     ElMessage.success('已成功解除绑定')
@@ -169,7 +168,7 @@ const openMountKbModal = () => {
   mountVisible.value = true
 }
 
-const handleMountConfirm = (kbs: string[]) => {
+const handleMountConfirm = (kbs) => {
   if(localModel.value) {
     localModel.value.kb = kbs
   }

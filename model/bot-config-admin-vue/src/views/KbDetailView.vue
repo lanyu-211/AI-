@@ -31,7 +31,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
@@ -40,14 +40,14 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 const route = useRoute()
 const store = useAppStore()
 
-const kbId = computed(() => route.params.kbId as string)
+const kbId = computed(() => route.params.kbId)
 const kb = computed(() => store.kbList.find(k => k.id === kbId.value))
 
-const getFileExt = (filename: string) => {
+const getFileExt = (filename) => {
   return filename.split('.').pop()?.toLowerCase() || 'unknown'
 }
 
-const handleDelete = (index: number) => {
+const handleDelete = (index) => {
   ElMessageBox.confirm('确定要永久删除此文档吗？', '提示', {
     type: 'warning'
   }).then(() => {
@@ -63,7 +63,7 @@ const openUpload = () => {
   uploadVisible.value = true
 }
 
-const handleUploadSuccess = (newFiles: string[]) => {
+const handleUploadSuccess = (newFiles) => {
   store.addKbFiles(kbId.value, newFiles)
 }
 </script>

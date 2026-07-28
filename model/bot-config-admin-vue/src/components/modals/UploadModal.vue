@@ -59,12 +59,14 @@
   </el-dialog>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, watch } from 'vue'
 import { FirstAidKit } from '@element-plus/icons-vue' // Placeholder icon
 import { ElMessage } from 'element-plus'
 
-const props = defineProps<{ visible: boolean }>()
+const props = defineProps({
+  visible: Boolean
+})
 const emit = defineEmits(['update:visible', 'success'])
 
 const dialogVisible = computed({
@@ -72,9 +74,9 @@ const dialogVisible = computed({
   set: (val) => emit('update:visible', val)
 })
 
-const fileInput = ref<HTMLInputElement | null>(null)
+const fileInput = ref(null)
 const isDragOver = ref(false)
-const files = ref<File[]>([])
+const files = ref([])
 const uploading = ref(false)
 const progress = ref(0)
 const allowedExts = ['pdf', 'doc', 'docx', 'md', 'txt']
@@ -87,9 +89,9 @@ watch(() => props.visible, (val) => {
   }
 })
 
-const getFileExt = (filename: string) => filename.split('.').pop()?.toLowerCase() || 'unknown'
+const getFileExt = (filename) => filename.split('.').pop()?.toLowerCase() || 'unknown'
 
-const filterFiles = (fileList: FileList | File[]) => {
+const filterFiles = (fileList) => {
   for (let i = 0; i < fileList.length; i++) {
     const f = fileList[i]
     if (allowedExts.includes(getFileExt(f.name))) {
@@ -103,15 +105,15 @@ const filterFiles = (fileList: FileList | File[]) => {
   }
 }
 
-const triggerFileSelect = () => fileInput.value?.click()
+const triggerFileSelect = () => { if (fileInput.value) fileInput.value.click() }
 
-const handleFileSelect = (e: Event) => {
-  const target = e.target as HTMLInputElement
+const handleFileSelect = (e) => {
+  const target = e.target
   if (target.files) filterFiles(target.files)
   target.value = '' // Reset
 }
 
-const handleDrop = (e: DragEvent) => {
+const handleDrop = (e) => {
   isDragOver.value = false
   if (e.dataTransfer?.files) filterFiles(e.dataTransfer.files)
 }

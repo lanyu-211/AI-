@@ -39,13 +39,12 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { UploadFilled, Reading, ChatDotRound, Position } from '@element-plus/icons-vue'
-import type { UploadFile } from 'element-plus'
 
 const emit = defineEmits(['upload'])
 
-const handleChange = (file: UploadFile) => {
+const handleChange = (file) => {
   emit('upload', file)
 }
 </script>

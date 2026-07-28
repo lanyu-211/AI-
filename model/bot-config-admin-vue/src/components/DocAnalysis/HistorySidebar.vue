@@ -58,15 +58,15 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue'
 import { Plus, Expand, Fold, Search, Document, MoreFilled, Delete } from '@element-plus/icons-vue'
 
-const props = defineProps<{
-  isCollapsed: boolean
-  currentId: string
-  history: Array<{ id: string; title: string }>
-}>()
+const props = defineProps({
+  isCollapsed: Boolean,
+  currentId: String,
+  history: Array
+})
 
 const emit = defineEmits(['new-upload', 'toggle-collapse', 'select-session', 'delete-session'])
 

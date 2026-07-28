@@ -58,14 +58,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { useAppStore } from '@/stores/appStore'
 
 const appStore = useAppStore()
-const latencyChartRef = ref<HTMLElement | null>(null)
-const errorChartRef = ref<HTMLElement | null>(null)
+const latencyChartRef = ref(null)
+const errorChartRef = ref(null)
 
 const colors = [
   { color: '#f56c6c', percentage: 20 },

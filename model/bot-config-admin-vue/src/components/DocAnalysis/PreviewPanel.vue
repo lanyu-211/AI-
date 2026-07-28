@@ -33,13 +33,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { Document, ZoomIn, ZoomOut, Download } from '@element-plus/icons-vue'
 
-defineProps<{
-  title: string
-  content?: string
-}>()
+defineProps({
+  title: String,
+  content: String
+})
 </script>
 
 <style scoped>

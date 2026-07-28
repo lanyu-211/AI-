@@ -40,7 +40,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
@@ -49,34 +49,34 @@ const router = useRouter()
 const route = useRoute()
 const store = useAppStore()
 
-const entId = computed(() => route.params.entId as string)
+const entId = computed(() => route.params.entId)
 const ent = computed(() => store.enterprises.find(e => e.id === entId.value))
 
 const filteredKbs = computed(() => {
   return store.kbList.filter(k => k.entId === entId.value)
 })
 
-const goToDetail = (kbId: string) => {
+const goToDetail = (kbId) => {
   router.push(`/kb-detail/${entId.value}/${kbId}`)
 }
 
 import GenericEditModal from '@/components/modals/GenericEditModal.vue'
 const genericModalVisible = ref(false)
-const modalType = ref<'enterprise'|'kb'>('kb')
-const editId = ref<string | null>(null)
+const modalType = ref('kb')
+const editId = ref(null)
 
 const openCreate = () => {
   modalType.value = 'kb'
   editId.value = null
   genericModalVisible.value = true
 }
-const openEdit = (id: string) => {
+const openEdit = (id) => {
   modalType.value = 'kb'
   editId.value = id
   genericModalVisible.value = true
 }
 
-const handleSuccess = (data: any) => {
+const handleSuccess = (data) => {
   if(!editId.value) store.addKb({id: 'kb'+Date.now(), entId: entId.value, name: data.name, desc: data.desc, files: []})
 }
 </script>

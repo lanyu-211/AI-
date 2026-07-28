@@ -94,13 +94,15 @@
   </el-dialog>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, watch } from 'vue'
-import { useAppStore, type ModelData } from '@/stores/appStore'
+import { useAppStore } from '@/stores/appStore'
 import { ElMessage } from 'element-plus'
 import MountKbModal from './MountKbModal.vue'
 
-const props = defineProps<{ visible: boolean }>()
+const props = defineProps({
+  visible: Boolean
+})
 const emit = defineEmits(['update:visible'])
 const store = useAppStore()
 
@@ -109,7 +111,7 @@ const dialogVisible = computed({
   set: (val) => emit('update:visible', val)
 })
 
-const formData = ref<Partial<ModelData>>({})
+const formData = ref({})
 const mountVisible = ref(false)
 
 watch(() => props.visible, (val) => {
@@ -130,7 +132,7 @@ watch(() => props.visible, (val) => {
 
 const openMountModal = () => { mountVisible.value = true }
 
-const handleMountConfirm = (kbs: string[]) => {
+const handleMountConfirm = (kbs) => {
   if(formData.value) formData.value.kb = kbs
 }
 
@@ -143,7 +145,7 @@ const confirm = () => {
   }
   
   store.addModel({
-    ...(formData.value as ModelData),
+    ...formData.value,
     id: 'm-' + Date.now()
   })
   

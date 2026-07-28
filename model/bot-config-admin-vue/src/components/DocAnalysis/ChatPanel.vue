@@ -54,19 +54,19 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, nextTick } from 'vue'
 import { Promotion } from '@element-plus/icons-vue'
 
-const props = defineProps<{
-  messages: Array<{ role: 'user' | 'ai'; content: string }>
-  isTyping: boolean
-}>()
+const props = defineProps({
+  messages: Array,
+  isTyping: Boolean
+})
 
 const emit = defineEmits(['send'])
 
 const inputMessage = ref('')
-const messageListRef = ref<HTMLElement | null>(null)
+const messageListRef = ref(null)
 
 // 模拟头像
 const userAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4'
@@ -82,7 +82,7 @@ const scrollToBottom = async () => {
   }
 }
 
-const handleEnter = (e: KeyboardEvent) => {
+const handleEnter = (e) => {
   if (e.shiftKey) return
   sendMessage()
 }

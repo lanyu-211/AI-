@@ -47,7 +47,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
@@ -68,14 +68,14 @@ const filteredEnts = computed(() => {
 
 const handleSearch = () => {}
 
-const goToList = (id: string) => {
+const goToList = (id) => {
   router.push(`/kb-list/${id}`)
 }
 
 import GenericEditModal from '@/components/modals/GenericEditModal.vue'
 const genericModalVisible = ref(false)
-const modalType = ref<'enterprise'|'kb'>('enterprise')
-const editId = ref<string | null>(null)
+const modalType = ref('enterprise')
+const editId = ref(null)
 
 const openCreate = () => {
   modalType.value = 'enterprise'
@@ -83,13 +83,13 @@ const openCreate = () => {
   genericModalVisible.value = true
 }
 
-const openEdit = (id: string) => {
+const openEdit = (id) => {
   modalType.value = 'enterprise'
   editId.value = id
   genericModalVisible.value = true
 }
 
-const handleSuccess = (data: any) => {
+const handleSuccess = (data) => {
   // handled automatically by store for edit, manually add for create
   if(!editId.value) store.addEnterprise({id: 'ent'+Date.now(), name: data.name, desc: data.desc, kbCount: 0})
 }

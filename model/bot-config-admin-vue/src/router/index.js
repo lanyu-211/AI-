@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 // 懒加载页面视图
 const MainLayout = () => import('@/layout/MainLayout.vue')
 const ModelsView = () => import('@/views/ModelsView.vue')
@@ -12,7 +12,7 @@ const PerfMonitorView = () => import('@/views/PerfMonitorView.vue')
 const DocAnalysisView = () => import('@/views/DocAnalysisView.vue')
 
 
-const routes: Array<RouteRecordRaw> = [
+const routes = [
   {
     path: '/',
     component: MainLayout,

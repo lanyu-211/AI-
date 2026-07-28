@@ -40,7 +40,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
@@ -71,7 +71,7 @@ const openNewModel = () => {
   modelModalVisible.value = true
 }
 
-const goToDetail = (id: string) => {
+const goToDetail = (id) => {
   router.push(`/model-config/${id}`)
 }
 </script>

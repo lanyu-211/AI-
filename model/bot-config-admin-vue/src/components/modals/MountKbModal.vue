@@ -58,14 +58,14 @@
   </el-dialog>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, watch } from 'vue'
 import { useAppStore } from '@/stores/appStore'
 
-const props = defineProps<{
-  visible: boolean
-  initialSelected?: string[]
-}>()
+const props = defineProps({
+  visible: Boolean,
+  initialSelected: Array
+})
 
 const emit = defineEmits(['update:visible', 'confirm'])
 const store = useAppStore()
@@ -77,7 +77,7 @@ const dialogVisible = computed({
 
 const searchQuery = ref('')
 const currentEntId = ref('')
-const selectedKbs = ref(new Set<string>())
+const selectedKbs = ref(new Set())
 
 watch(() => props.visible, (val) => {
   if (val) {
@@ -98,7 +98,7 @@ const filteredKbs = computed(() => {
   return list
 })
 
-const toggleSelect = (name: string) => {
+const toggleSelect = (name) => {
   if (selectedKbs.value.has(name)) {
     selectedKbs.value.delete(name)
   } else {
