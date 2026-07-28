@@ -22,6 +22,7 @@
         v-for="m in filteredModels" 
         :key="m.id" 
         class="card" 
+        data-pinmark="model-item-card"
         @click="goToDetail(m.id)"
       >
         <span class="tag tag-blue">{{ m.type }}</span>
