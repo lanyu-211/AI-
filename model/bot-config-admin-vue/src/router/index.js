@@ -7,8 +7,6 @@ const EnterprisesView = () => import('@/views/EnterprisesView.vue')
 const KbListView = () => import('@/views/KbListView.vue')
 const KbDetailView = () => import('@/views/KbDetailView.vue')
 const AiChatView = () => import('@/views/AiChatView.vue')
-const UsageStatsView = () => import('@/views/UsageStatsView.vue')
-const PerfMonitorView = () => import('@/views/PerfMonitorView.vue')
 const DocAnalysisView = () => import('@/views/DocAnalysisView.vue')
 
 
@@ -52,19 +50,7 @@ const routes = [
         path: 'ai-chat',
         name: 'AiChat',
         component: AiChatView,
-        meta: { title: 'AI 模型对话' }
-      },
-      {
-        path: 'usage',
-        name: 'UsageStats',
-        component: UsageStatsView,
-        meta: { title: '统计报表' }
-      },
-      {
-        path: 'monitor',
-        name: 'PerfMonitor',
-        component: PerfMonitorView,
-        meta: { title: '性能监控' }
+        meta: { title: '官网智能客服' }
       },
       {
         path: 'doc-analysis',

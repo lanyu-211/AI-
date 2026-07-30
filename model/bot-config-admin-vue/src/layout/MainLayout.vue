@@ -21,13 +21,7 @@
           <span>企业管理主体</span>
         </el-menu-item>
         <el-menu-item index="/ai-chat">
-          <span>AI 模型对话</span>
-        </el-menu-item>
-        <el-menu-item index="/usage">
-          <span>统计报表</span>
-        </el-menu-item>
-        <el-menu-item index="/monitor">
-          <span>性能监控</span>
+          <span>官网智能客服</span>
         </el-menu-item>
         <el-menu-item index="/doc-analysis">
           <span>文档分析</span>
@@ -108,11 +102,7 @@ const breadcrumbs = computed(() => {
       pathArr.push({ title: '全部企业' })
     }
   } else if (route.path.startsWith('/ai-chat')) {
-    pathArr.push({ title: 'AI 模型对话' })
-  } else if (route.path.startsWith('/usage')) {
-    pathArr.push({ title: '统计报表' })
-  } else if (route.path.startsWith('/monitor')) {
-    pathArr.push({ title: '性能监控' })
+    pathArr.push({ title: '官网智能客服' })
   } else if (route.path.startsWith('/doc-analysis')) {
     pathArr.push({ title: '文档分析' })
   }
