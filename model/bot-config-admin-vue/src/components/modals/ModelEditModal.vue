@@ -1,15 +1,15 @@
 <template>
   <el-dialog
     v-model="dialogVisible"
-    title="新增模型实例"
+    title="新增智能场景助手"
     width="640px"
     destroy-on-close
   >
     <el-form :model="formData" label-position="top">
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="模型名称">
-            <el-input v-model="formData.name" placeholder="例如: GPT-4o-Mini" />
+          <el-form-item label="助手名称">
+            <el-input v-model="formData.name" placeholder="例如: 智能客服助手" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -32,30 +32,19 @@
         />
       </el-form-item>
       
-      <el-form-item label="功能描述">
-        <el-input v-model="formData.desc" placeholder="简要说明其在业务中的用途" />
+      <el-form-item label="场景描述说明">
+        <el-input v-model="formData.desc" placeholder="简要说明该助手在具体业务中的用途" />
       </el-form-item>
 
       <div style="border-top:1px dashed #eee; padding-top:16px; margin-top:8px">
-        <label style="color:var(--primary-color); display:block; margin-bottom: 12px; font-size:14px; font-weight:500;">初始化推理参数</label>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div style="margin-bottom: 8px;">
-              <div style="display:flex; justify-content:space-between; font-size:13px">
-                <span>生成温度</span><b>{{ formData.temp }}</b>
-              </div>
-              <el-slider v-model="formData.temp" :min="0" :max="2" :step="0.1" :show-tooltip="false" />
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:13px">
-                <span>最大 Token</span><b>{{ formData.out }}</b>
-              </div>
-              <el-slider v-model="formData.out" :min="256" :max="8192" :step="256" :show-tooltip="false" />
-            </div>
-          </el-col>
-        </el-row>
+        <el-form-item label="默认系统提示词 (System Prompt)" required>
+          <el-input 
+            v-model="formData.prompt" 
+            type="textarea" 
+            :rows="3" 
+            placeholder="例如：你是一个有亲和力的在线智能客服..." 
+          />
+        </el-form-item>
       </div>
 
       <div style="border-top:1px dashed #eee; padding-top:16px; margin-top:16px">
@@ -121,10 +110,7 @@ watch(() => props.visible, (val) => {
       type: 'OpenAI',
       key: '',
       desc: '',
-      temp: 0.7,
-      topP: 1.0,
-      mem: 20,
-      out: 2048,
+      prompt: '你是一个通用的场景助手，请用专业且严谨的语气为用户解答。',
       kb: []
     }
   }
@@ -140,7 +126,7 @@ const close = () => { dialogVisible.value = false }
 
 const confirm = () => {
   if (!formData.value.name || !formData.value.key) {
-    ElMessage.warning('名称和密钥必填')
+    ElMessage.warning('助手名称和 API 密钥必填')
     return
   }
   
@@ -149,7 +135,7 @@ const confirm = () => {
     id: 'm-' + Date.now()
   })
   
-  ElMessage.success('模型已就位')
+  ElMessage.success('智能助手创建成功')
   close()
 }
 </script>

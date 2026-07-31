@@ -14,15 +14,21 @@
         active-text-color="#fff"
         router
       >
-        <el-menu-item index="/models">
-          <span>大模型管理</span>
-        </el-menu-item>
-        <el-menu-item index="/enterprises">
-          <span>企业管理主体</span>
-        </el-menu-item>
-        <el-menu-item index="/ai-chat">
-          <span>官网智能客服</span>
-        </el-menu-item>
+        <el-sub-menu index="ai-chat-group">
+          <template #title>
+            <span>官网智能客服</span>
+          </template>
+          <el-menu-item index="/ai-chat">
+            <span>智能客服后台</span>
+          </el-menu-item>
+          <el-menu-item index="/models">
+            <span>客服模型配置</span>
+          </el-menu-item>
+          <el-menu-item index="/kb-list/e1">
+            <span>智能客服知识库管理</span>
+          </el-menu-item>
+        </el-sub-menu>
+
         <el-menu-item index="/doc-analysis">
           <span>文档分析</span>
         </el-menu-item>
@@ -30,9 +36,6 @@
           <span>智能出题</span>
         </el-menu-item>
 
-        <el-menu-item index="/api-keys" disabled>
-          <span>API 秘钥池</span>
-        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -73,7 +76,7 @@ const appStore = useAppStore()
 // 侧边栏高亮逻辑
 const activeMenu = computed(() => {
   if (route.path.startsWith('/model')) return '/models'
-  if (route.path.startsWith('/kb') || route.path.startsWith('/enterprise')) return '/enterprises'
+  if (route.path.startsWith('/kb') || route.path.startsWith('/enterprise')) return '/kb-list/e1'
   return route.path
 })
 
@@ -82,30 +85,28 @@ const breadcrumbs = computed(() => {
   const pathArr = []
 
   if (route.path.startsWith('/model-config')) {
-    pathArr.push({ title: '大模型管理', path: '/models' })
+    pathArr.push({ title: '官网智能客服' })
+    pathArr.push({ title: '客服模型配置', path: '/models' })
     pathArr.push({ title: '详情参数配置' })
   } else if (route.path.startsWith('/models')) {
-    pathArr.push({ title: '大模型管理' })
+    pathArr.push({ title: '官网智能客服' })
+    pathArr.push({ title: '客服模型配置' })
   } else if (route.path.startsWith('/kb') || route.path.startsWith('/enterprises')) {
-    pathArr.push({ title: '知识库列表', path: '/enterprises' })
+    pathArr.push({ title: '官网智能客服' })
     
     if (route.path.startsWith('/kb-list')) {
-      const entId = route.params.entId
-      const ent = appStore.enterprises.find(e => e.id === entId)
-      if (ent) pathArr.push({ title: ent.name, path: `/kb-list/${entId}` })
-      if (route.name === 'KbList') pathArr.push({ title: '库项集合' })
+      pathArr.push({ title: '智能客服知识库管理' })
     } else if (route.path.startsWith('/kb-detail')) {
-      const entId = route.params.entId
+      pathArr.push({ title: '智能客服知识库管理', path: '/kb-list/e1' })
       const kbId = route.params.kbId
-      const ent = appStore.enterprises.find(e => e.id === entId)
       const kb = appStore.kbList.find(k => k.id === kbId)
-      if (ent) pathArr.push({ title: ent.name, path: `/kb-list/${entId}` })
       if (kb) pathArr.push({ title: kb.name })
     } else {
-      pathArr.push({ title: '全部企业' })
+      pathArr.push({ title: '智能客服知识库管理' })
     }
   } else if (route.path.startsWith('/ai-chat')) {
     pathArr.push({ title: '官网智能客服' })
+    pathArr.push({ title: '智能客服后台' })
   } else if (route.path.startsWith('/doc-analysis')) {
     pathArr.push({ title: '文档分析' })
   } else if (route.path.startsWith('/question-generator')) {

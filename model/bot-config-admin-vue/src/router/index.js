@@ -31,8 +31,7 @@ const routes = [
       {
         path: 'enterprises',
         name: 'Enterprises',
-        component: EnterprisesView,
-        meta: { title: '企业管理主体' }
+        redirect: '/kb-list/e1'
       },
       {
         path: 'kb-list/:entId',

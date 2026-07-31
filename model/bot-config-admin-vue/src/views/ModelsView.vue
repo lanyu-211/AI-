@@ -2,18 +2,18 @@
   <div class="page-container">
     <div class="page-header" style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 24px;">
       <div style="flex: 1;">
-        <h2 style="font-size: 20px; font-weight: 600; margin: 0;">大模型管理</h2>
-        <p style="color:var(--text-secondary); font-size:13px; margin-top:4px; margin-bottom:0">统一管理所有模型实例的运行状态及核心逻辑参数</p>
+        <h2 style="font-size: 20px; font-weight: 600; margin: 0;">模型场景管理</h2>
+        <p style="color:var(--text-secondary); font-size:13px; margin-top:4px; margin-bottom:0">配置不同业务场景下 AI 助手的系统人设、API 密钥与关联专属知识库</p>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <el-input 
           v-model="searchQuery" 
-          placeholder="搜索模型名称或描述..." 
+          placeholder="搜索助手名称或描述..." 
           style="width: 220px;" 
           @keyup.enter="handleSearch"
         />
         <el-button @click="handleSearch">搜索</el-button>
-        <el-button type="primary" @click="openNewModel">+ 新增模型</el-button>
+        <el-button type="primary" @click="openNewModel">+ 新增场景助手</el-button>
       </div>
     </div>
 

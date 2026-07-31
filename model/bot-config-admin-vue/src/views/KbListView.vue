@@ -2,8 +2,8 @@
   <div class="page-container">
     <div class="page-header" style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 24px;">
       <div style="flex: 1;">
-        <h2 style="font-size: 20px; font-weight: 600; margin: 0;">{{ ent?.name }} - 知识库集合</h2>
-        <p style="color:var(--text-secondary); font-size:13px; margin-top:4px; margin-bottom:0">管理企业下属的所有知识库及文档内容</p>
+        <h2 style="font-size: 20px; font-weight: 600; margin: 0;">专属知识库集合</h2>
+        <p style="color:var(--text-secondary); font-size:13px; margin-top:4px; margin-bottom:0">维护公司客服机器人专属挂载的私有知识库及核心训练文档</p>
       </div>
       <div>
         <el-button type="primary" @click="openCreate">+ 创建知识库</el-button>
