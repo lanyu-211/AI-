@@ -57,6 +57,12 @@ const routes = [
         name: 'DocAnalysis',
         component: DocAnalysisView,
         meta: { title: '文档分析' }
+      },
+      {
+        path: 'question-generator',
+        name: 'QuestionGenerator',
+        component: () => import('@/views/QuestionGeneratorView.vue'),
+        meta: { title: '智能出题' }
       }
 
     ]

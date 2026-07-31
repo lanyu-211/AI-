@@ -47,6 +47,13 @@ export const useAppStore = defineStore('app', () => {
     { id: '2', model: 'Claude 3', query: '写一首关于春天的诗', answer: '春风拂过柳梢头，绿意盎然满枝头...', feedback: 'up', time: '2024-03-17 15:10' },
   ])
 
+  // 模拟班级数据
+  const classes = ref([
+    { id: 'c1', name: '高一 3 班 (物理组)', studentCount: 45 },
+    { id: 'c2', name: '高一 4 班 (物理组)', studentCount: 42 },
+    { id: 'c3', name: '高二 1 班 (实验班)', studentCount: 50 }
+  ])
+
   // 操作方法
   const addModel = (model) => {
     models.value.push(model)
@@ -104,7 +111,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     models, enterprises, kbList,
-    usageStats, latencyStats, badCases,
+    usageStats, latencyStats, badCases, classes,
     addModel, updateModel,
     addEnterprise, updateEnterprise,
     addKb, updateKb, deleteKbFile, addKbFiles
