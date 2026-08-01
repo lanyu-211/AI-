@@ -115,7 +115,7 @@ const PinMarkComponent = {
         
         <div v-if="activePinData" class="flex-1 flex flex-col min-h-0">
           <!-- 面板头部 (拖拽把手) -->
-          <div @mousedown="startDrag" class="h-11 border-b border-gray-100 flex items-center justify-between px-3 bg-gray-50/80 cursor-move select-none hover:bg-gray-100 transition-colors" title="按住拖动面板">
+          <div @mousedown="startDrag" @wheel.prevent="handleHeaderWheel" class="h-11 border-b border-gray-100 flex items-center justify-between px-3 bg-gray-50/80 cursor-move select-none hover:bg-gray-100 transition-colors" title="按住拖动面板（支持鼠标滚轮调整大小）">
             <div class="flex items-center pointer-events-none">
               <i class="fa-solid fa-grip-vertical text-gray-400 mr-2"></i>
               <div class="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">
@@ -557,10 +557,52 @@ const PinMarkComponent = {
       if (e && e.target && e.target.closest('a')) {
         return;
       }
+
+      let clickPosition = 0;
+      let selectionLen = 0;
+      
+      if (e && e.target) {
+        const clickedText = e.target.textContent ? e.target.textContent.trim() : '';
+        const fullMarkdown = activePinData.value?.pin?.text || '';
+        
+        if (clickedText && fullMarkdown) {
+          // 1. 先尝试在 Markdown 源码中进行完整匹配
+          let index = fullMarkdown.indexOf(clickedText);
+          let matchLen = clickedText.length;
+          
+          // 2. 如果完整匹配失败（可能因为含有 Markdown 语法符号如 **、* 等），进行滑动窗口模糊匹配
+          if (index === -1) {
+            for (let len = Math.min(15, clickedText.length); len >= 3; len--) {
+              let found = false;
+              for (let start = 0; start <= clickedText.length - len; start++) {
+                const sub = clickedText.slice(start, start + len);
+                const subIdx = fullMarkdown.indexOf(sub);
+                if (subIdx !== -1) {
+                  index = subIdx;
+                  matchLen = len;
+                  found = true;
+                  break;
+                }
+              }
+              if (found) break;
+            }
+          }
+          
+          if (index !== -1) {
+            clickPosition = index;
+            selectionLen = matchLen;
+          }
+        }
+      }
+
       isEditingText.value = true;
       nextTick(() => {
         if (textareaRef.value) {
           textareaRef.value.focus();
+          if (clickPosition > 0 || selectionLen > 0) {
+            // 定位光标，并将匹配到的文字进行高亮选中，给用户极其清晰的定位反馈
+            textareaRef.value.setSelectionRange(clickPosition, clickPosition + selectionLen);
+          }
         }
       });
     };
@@ -947,9 +989,9 @@ const PinMarkComponent = {
       const deltaY = e.clientY - resizeStartPos.y;
       
       const minW = 300;
-      const maxW = 800;
+      const maxW = 1200;
       const minH = 260;
-      const maxH = 800;
+      const maxH = 1000;
       
       // X 轴方向拉伸计算
       if (currentResizeDirection.includes('e')) {
@@ -978,6 +1020,25 @@ const PinMarkComponent = {
       window.removeEventListener('mouseup', stopResize);
     };
 
+    const handleHeaderWheel = (e) => {
+      e.preventDefault();
+      const step = 20;
+      const direction = e.deltaY > 0 ? -1 : 1;
+      
+      const prevW = panelWidth.value;
+      const prevH = panelHeight.value;
+      
+      const newW = Math.max(300, Math.min(1200, prevW + direction * step));
+      const newH = Math.max(260, Math.min(1000, prevH + direction * step));
+      
+      panelWidth.value = newW;
+      panelHeight.value = newH;
+      
+      if (panelPosition.value.x !== null) {
+        panelPosition.value.x = panelPosition.value.x - (newW - prevW) / 2;
+      }
+    };
+
     return {
       isAnnotating,
       filteredPins,
@@ -993,6 +1054,7 @@ const PinMarkComponent = {
       fileInputRef,
       startDrag,
       startResize,
+      handleHeaderWheel,
       toggleVisibility,
       toggleMode,
       handleCanvasClick,

@@ -1,1 +1,22 @@
-[{"id":"pin_1781158646230","x":931,"y":214,"pageId":"doc-analysis-2","text":"","targetSelector":"div#app > section:nth-of-type(1) > section:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div[aria-label=\"新增企业主体\"][role=\"dialog\"]:nth-of-type(1) > div:nth-of-type(1) > header:nth-of-type(1)","percentX":0.43526785714285715,"percentY":0.892578125}]
+[
+  {
+    "id": "pin_1781158646230",
+    "x": 931,
+    "y": 214,
+    "pageId": "doc-analysis-2",
+    "text": "",
+    "targetSelector": "div#app > section:nth-of-type(1) > section:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div[aria-label=\"新增企业主体\"][role=\"dialog\"]:nth-of-type(1) > div:nth-of-type(1) > header:nth-of-type(1)",
+    "percentX": 0.43526785714285715,
+    "percentY": 0.892578125
+  },
+  {
+    "id": "pin_model_item_card",
+    "x": 300,
+    "y": 100,
+    "pageId": "/models",
+    "text": "### 📌 客服场景卡片 · 需求规格\n\n**1. 输入与触发 (Trigger & Input)**\n- **触发行为**：用户左键点击场景卡片区域或底部的“配置详情”文字链接。\n- **数据约束**：展示卡片必须绑定有明确的渠道标识；上方搜索输入框发生文本改变时自动触发列表检索。\n\n**2. 核心逻辑与状态联动 (Logic & State)**\n- **业务规则**：点击获取当前助手的唯一编号，并穿透重定向至该助手的参数调校与人设配置面板。\n- **影响范围**：无本地数据修改，仅触发主视图路由状态变更。\n\n**3. 界面反馈与异常分支决策矩阵 (Feedback & Edge Table)**\n\n| 触发场景 (Scenario) | 判定条件 (Condition) | 系统处理动作 (Action) | 用户界面反馈 (UI Feedback) |\n| :--- | :--- | :--- | :--- |\n| **点击配置详情** | 绑定有合法场景编号 | 记录编号并跳转 | 页面滑入展现当前助手的提示词与密钥配置详情 |\n| **多字段模糊搜索** | 搜索文字匹配名称或描述 | 执行前端卡片过滤 | 动态隐藏不匹配的卡片，仅保留符合条件的主体 |\n| **无匹配搜索结果** | 过滤后卡片列表为空 | 展现缺省占位符 | 提示“没有找到匹配的模型...”缺省语料信息 |",
+    "targetSelector": "[data-pinmark=\"model-item-card\"]",
+    "percentX": 1.0,
+    "percentY": 0.0
+  }
+]

@@ -537,7 +537,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { useAppStore } from '@/stores/appStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -550,6 +550,10 @@ const appStore = useAppStore()
 
 // 步骤状态控制： 0:上传, 0.5:解析中, 1:出题配置, 1.5:生成中, 2:预览与下发
 const activeStep = ref(0)
+watch(activeStep, (newVal) => {
+  window.__PINMARK_PAGE__ = `question-generator-step-${newVal}`;
+  window.dispatchEvent(new Event('pinmark:pagechange'));
+})
 const isDragOver = ref(false)
 
 // 文档信息
