@@ -40,6 +40,7 @@
           v-for="item in filteredHistory" 
           :key="item.id" 
           :class="['history-item', { active: currentChatId === item.id }]"
+          data-pinmark="chat-history-item"
           @click="selectChat(item)"
         >
           <div class="item-avatar">
@@ -231,7 +232,7 @@
         </div>
 
         <!-- 未接管状态：展示 AI 托管提示及一键接管入口 -->
-        <div v-if="!currentChat.isHandled" class="disabled-input-overlay">
+        <div v-if="!currentChat.isHandled" class="disabled-input-overlay" data-pinmark="disabled-input-overlay">
           <div class="overlay-content">
             <el-icon color="#e6a23c" :size="20"><WarningFilled /></el-icon>
             <span>当前会话由 AI 智能托管中。</span>

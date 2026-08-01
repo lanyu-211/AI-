@@ -30,7 +30,7 @@
       </div>
 
       <!-- 右侧配置栏 -->
-      <div class="config-sidebar">
+      <div class="config-sidebar" data-pinmark="model-config-sidebar">
         <!-- 基础身份 -->
         <div class="panel">
           <span class="sidebar-section-title">基础身份</span>
