@@ -10,11 +10,12 @@ if (!document.querySelector('link[href*="font-awesome"]')) {
 }
 
 // 自动注入 Tailwind CSS (由于组件使用了大量 Tailwind 类名)
-if (!document.querySelector('script[src*="tailwindcss"]')) {
-  const script = document.createElement('script');
-  script.src = 'https://cdn.tailwindcss.com';
-  document.head.appendChild(script);
-}
+// 注释掉此代码，因为宿主项目已本地集成了 Tailwind CSS 4 避免 Preflight 冲突与网络延迟
+// if (!document.querySelector('script[src*="tailwindcss"]')) {
+//   const script = document.createElement('script');
+//   script.src = 'https://cdn.tailwindcss.com';
+//   document.head.appendChild(script);
+// }
 
 // 2. 辅助函数：获取元素的唯一 CSS Path，支持 Element Plus 动态 ID 过滤
 const getCssPath = (el) => {

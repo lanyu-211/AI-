@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
+import tailwindcss from '@tailwindcss/vite'
 
 import PinmarkDevPlugin from './pinmark-vite-plugin.js';
 
@@ -8,6 +9,7 @@ import PinmarkDevPlugin from './pinmark-vite-plugin.js';
 export default defineConfig({
   plugins: [
     vue(),
+    tailwindcss(),
     PinmarkDevPlugin()
   ],
   resolve: {
