@@ -29,8 +29,11 @@
         </div>
       </div>
 
+      <!-- 拖拽拉伸手柄 -->
+      <div class="resize-handle" @mousedown="startResize" title="按住拖拽调整宽度"></div>
+
       <!-- 右侧配置栏 -->
-      <div class="config-sidebar" data-pinmark="model-config-sidebar">
+      <div class="config-sidebar" :style="{ width: sidebarWidth + 'px' }" data-pinmark="model-config-sidebar">
         <!-- 基础身份 -->
         <div class="panel">
           <span class="sidebar-section-title">基础身份</span>
@@ -206,6 +209,37 @@ const saveConfig = () => {
     goBack()
   }
 }
+
+// 侧边栏拖拽调宽逻辑
+const sidebarWidth = ref(420)
+let startWidth = 0
+let startX = 0
+
+const startResize = (e) => {
+  e.preventDefault()
+  startWidth = sidebarWidth.value
+  startX = e.clientX
+  
+  document.body.style.userSelect = 'none'
+  document.body.style.cursor = 'col-resize'
+
+  window.addEventListener('mousemove', handleResize)
+  window.addEventListener('mouseup', stopResize)
+}
+
+const handleResize = (e) => {
+  const deltaX = startX - e.clientX
+  const nextWidth = startWidth + deltaX
+  sidebarWidth.value = Math.max(320, Math.min(800, nextWidth))
+}
+
+const stopResize = () => {
+  document.body.style.userSelect = ''
+  document.body.style.cursor = ''
+  
+  window.removeEventListener('mousemove', handleResize)
+  window.removeEventListener('mouseup', stopResize)
+}
 </script>
 
 <style scoped>
@@ -223,7 +257,6 @@ const saveConfig = () => {
   flex-direction: column;
   background: #f7f8fa;
   position: relative;
-  border-right: 1px solid var(--border-color);
 }
 
 .chat-messages {
@@ -269,13 +302,43 @@ const saveConfig = () => {
 }
 
 .config-sidebar {
-  width: 420px;
+  flex-shrink: 0;
   overflow-y: auto;
   padding: 24px;
   background: white;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* 拖拽手柄样式 */
+.resize-handle {
+  width: 8px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 100;
+  margin-left: -4px;
+  margin-right: -4px;
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-color);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.resize-handle:hover::after,
+.resize-handle:active::after {
+  background: var(--primary-color);
+  width: 3px;
+  left: 2px;
+  box-shadow: 0 0 8px rgba(22, 119, 255, 0.4);
 }
 
 .sidebar-actions {
