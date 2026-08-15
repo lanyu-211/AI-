@@ -94,6 +94,10 @@
 
         <!-- 核心业务操作：手动接管/释放 -->
         <div class="header-actions">
+          <div class="assist-switch-wrapper" data-pinmark="assist-switch-wrapper">
+            <span class="assist-switch-label">AI 协同回复：</span>
+            <el-switch v-model="isAiAssistEnabled" @change="(val) => { if(!val) aiDraft.value = null }" />
+          </div>
           <el-button 
             v-if="!currentChat.isHandled" 
             type="primary" 
@@ -112,10 +116,6 @@
           >
             <el-icon><RefreshRight /></el-icon>
             <span>释放接管 (恢复AI托管)</span>
-          </el-button>
-          <el-button size="small" class="config-btn" @click="isDrawerOpen = true">
-            <el-icon><Setting /></el-icon>
-            <span>AI 检索配置</span>
           </el-button>
         </div>
       </div>
@@ -149,25 +149,71 @@
               <span class="msg-name">
                 <template v-if="msg.role === 'user'">{{ currentChat.customerName }}</template>
                 <template v-else-if="msg.isHumanAgent">人工客服</template>
-                <template v-else>AI 智能助理</template>
+                <template v-else>AI 智能客服</template>
               </span>
               <span class="msg-time">{{ msg.time }}</span>
             </div>
 
-            <div class="bubble">
-              <div class="msg-text" v-html="formatMessage(msg.content)"></div>
-              
-              <!-- 客服交互底部栏 (复制/收藏) -->
-              <div v-if="msg.role === 'assistant'" class="msg-actions">
-                <el-tooltip content="复制回答" placement="top">
-                  <el-button link size="small" @click="copyText(msg.content)">
-                    <el-icon><CopyDocument /></el-icon>
-                  </el-button>
+            <div class="bubble-wrapper">
+              <!-- 访客气泡左侧悬浮操作栏（鼠标悬停消息行时优雅浮现，不破坏对话纯粹感） -->
+              <div v-if="msg.role === 'user'" class="bubble-floating-actions user-floating-actions">
+                <el-tooltip content="针对此问题生成 AI 协同回复建议" placement="top" :show-after="200">
+                  <button 
+                    class="float-action-btn ai-action-btn"
+                    :class="{ 'is-loading': generatingMsgIndex === index }"
+                    @click="generateDraftForMessage(msg, index)"
+                  >
+                    <el-icon class="btn-icon"><MagicStick /></el-icon>
+                    <span>AI 建议</span>
+                  </button>
                 </el-tooltip>
-                <el-tooltip content="收藏点赞" placement="top">
-                  <el-button link size="small" :type="msg.liked ? 'warning' : ''" @click="toggleLike(msg)">
+                <el-tooltip content="复制问题" placement="top" :show-after="200">
+                  <button class="float-action-btn icon-btn" @click="copyText(msg.content)">
+                    <el-icon><CopyDocument /></el-icon>
+                  </button>
+                </el-tooltip>
+              </div>
+
+              <!-- 消息气泡主体 -->
+              <div class="bubble">
+                <div class="msg-text" v-html="formatMessage(msg.content)"></div>
+                
+                <!-- 关联的知识库来源切片 (如果是助理回答且带有切片) -->
+                <div v-if="msg.sources && msg.sources.length > 0" class="sources-card">
+                  <div class="sources-header">
+                    <el-icon class="source-icon"><DocumentChecked /></el-icon>
+                    <span>知识库切片引用：</span>
+                  </div>
+                  <div class="sources-list">
+                    <div 
+                      v-for="(src, sIdx) in msg.sources" 
+                      :key="sIdx" 
+                      class="source-tag"
+                      @click="openSourceModal(src)"
+                    >
+                      <el-icon><Document /></el-icon>
+                      <span>{{ src.docName }}</span>
+                      <span class="section-name">（{{ src.section }}）</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 助理/客服气泡右侧悬浮操作栏 -->
+              <div v-if="msg.role === 'assistant'" class="bubble-floating-actions assistant-floating-actions">
+                <el-tooltip content="复制回答" placement="top" :show-after="200">
+                  <button class="float-action-btn icon-btn" @click="copyText(msg.content)">
+                    <el-icon><CopyDocument /></el-icon>
+                  </button>
+                </el-tooltip>
+                <el-tooltip content="点赞收藏" placement="top" :show-after="200">
+                  <button 
+                    class="float-action-btn icon-btn" 
+                    :class="{ 'is-liked': msg.liked }" 
+                    @click="toggleLike(msg)"
+                  >
                     <el-icon><Star /></el-icon>
-                  </el-button>
+                  </button>
                 </el-tooltip>
               </div>
             </div>
@@ -208,10 +254,23 @@
               <el-button size="small" type="primary" plain @click="importDraftToInput">
                 <el-icon><Edit /></el-icon> 导入二次修改
               </el-button>
+              <el-button 
+                size="small" 
+                type="warning" 
+                plain 
+                :loading="isRegeneratingDraft"
+                @click="regenerateDraft"
+              >
+                <el-icon><RefreshRight /></el-icon> 重新生成
+              </el-button>
               <el-button size="small" link @click="aiDraft = null">忽略建议</el-button>
             </div>
           </div>
           <div class="draft-content">
+            <div v-if="aiDraft.targetQuestion" class="draft-target-question">
+              <span class="target-q-tag">针对提问</span>
+              <span class="target-q-text">“{{ aiDraft.targetQuestion }}”</span>
+            </div>
             <div class="draft-text" v-html="formatMessage(aiDraft.content)"></div>
             <div v-if="aiDraft.sources && aiDraft.sources.length > 0" class="draft-source-indicator">
               <span class="draft-source-label">检索出处 (点击可查看原文切片)：</span>
@@ -286,6 +345,10 @@
     >
       <div v-if="activeSource" class="source-detail">
         <div class="detail-row">
+          <span class="label">关联知识库：</span>
+          <span class="val">{{ activeSource.kbName }}</span>
+        </div>
+        <div class="detail-row">
           <span class="label">关联文档：</span>
           <span class="val bold">{{ activeSource.docName }}</span>
         </div>
@@ -302,36 +365,6 @@
         <el-button @click="isModalVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-
-    <!-- 配置参数抽屉 -->
-    <el-drawer
-      v-model="isDrawerOpen"
-      title="AI 智能匹配策略设置"
-      size="380px"
-    >
-      <div class="drawer-body">
-        <el-form label-position="top">
-          <el-form-item label="检索匹配度过滤阈值 (Score)">
-            <el-slider v-model="ragConfig.threshold" :min="0.5" :max="0.95" :step="0.05" show-input />
-            <div class="form-tip">低于此匹配度的知识库内容将被忽略，保障 AI 客服回答精度。</div>
-          </el-form-item>
-
-          <el-form-item label="单次最大召回切片数量 (Top-K)">
-            <el-input-number v-model="ragConfig.topK" :min="1" :max="5" />
-          </el-form-item>
-
-          <el-form-item label="关联的企业文档知识库">
-            <el-checkbox-group v-model="ragConfig.selectedKbs">
-              <el-checkbox label="《企业系统介绍.pdf》" />
-              <el-checkbox label="《产品功能手册与 FAQ》" />
-            </el-checkbox-group>
-          </el-form-item>
-        </el-form>
-      </div>
-      <template #footer>
-        <el-button type="primary" block @click="isDrawerOpen = false">应用匹配策略</el-button>
-      </template>
-    </el-drawer>
   </div>
 </template>
 
@@ -339,9 +372,9 @@
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { 
   Expand, Fold, Search, Delete, MoreFilled, 
-  Service, DocumentChecked, Document, Setting, Promotion, 
+  Service, DocumentChecked, Document, Promotion, 
   User, RefreshRight, InfoFilled, UserFilled, WarningFilled, Plus,
-  MagicStick, Check, Edit
+  MagicStick, Check, Edit, CopyDocument, Star
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -350,20 +383,16 @@ const searchQuery = ref('')
 const currentChatId = ref('chat-1')
 const inputMessage = ref('')
 const isGenerating = ref(false)
+const generatingMsgIndex = ref(null)
+const isRegeneratingDraft = ref(false)
+const isAiAssistEnabled = ref(true)
 const messagesContainer = ref(null)
 
-const isDrawerOpen = ref(false)
 const isModalVisible = ref(false)
 const activeSource = ref(null)
 
 // AI 协同回复草稿数据
 const aiDraft = ref(null)
-
-const ragConfig = ref({
-  threshold: 0.85,
-  topK: 3,
-  selectedKbs: ['《企业系统介绍.pdf》', '《产品功能手册与 FAQ》']
-})
 
 // 正在咨询的客户列表 (模拟真实客服后台会话)
 const chatHistory = ref([
@@ -573,17 +602,22 @@ const handleIncomingMessage = (text) => {
     isGenerating.value = false
 
     if (currentChat.value.isHandled) {
-      // 人工接管状态下：生成后台草稿，等待人工审核，不直接进入 messages 对话流
-      aiDraft.value = {
-        content: mockResponseText,
-        score: '96.2%',
-        sources: mockSources
+      // 人工接管状态下：若开启了 AI 协同助手，则生成后台草稿，等待人工审核，不直接进入 messages 对话流
+      if (isAiAssistEnabled.value) {
+        aiDraft.value = {
+          targetQuestion: text,
+          content: mockResponseText,
+          score: '96.2%',
+          sources: mockSources
+        }
+        ElMessage({
+          message: '🤖 AI 已为您生成一份协同回复草稿，请在输入框上方审核。',
+          type: 'info',
+          duration: 4000
+        })
+      } else {
+        aiDraft.value = null
       }
-      ElMessage({
-        message: '🤖 AI 已为您生成一份协同回复草稿，请在输入框上方审核。',
-        type: 'info',
-        duration: 4000
-      })
     } else {
       // AI 托管状态下：直接发送并显示在对话流里
       messages.value.push({
@@ -597,6 +631,133 @@ const handleIncomingMessage = (text) => {
     
     scrollToBottom()
   }, 1000)
+}
+
+// 针对特定访客消息气泡主动触发生成/刷新 AI 回复建议草稿
+const generateDraftForMessage = (msg, index) => {
+  // 若当前尚未进入人工接管状态，自动接入以便在输入区审核发送
+  if (!currentChat.value.isHandled) {
+    currentChat.value.isHandled = true
+  }
+
+  generatingMsgIndex.value = index
+
+  setTimeout(() => {
+    const text = msg.content
+    let mockResponseText = ''
+    let mockSources = []
+
+    if (text.includes('部署') || text.includes('环境') || text.includes('硬件') || text.includes('离线')) {
+      mockResponseText = '企业私有化部署支持**完全离线/物理隔离环境**。部署依赖包与 Milvus/Qdrant 镜像可采用离线 TAR 包导入，支持对接企业内部 LDAP 统一账户认证。'
+      mockSources = [
+        {
+          docName: '企业系统介绍.pdf',
+          section: '第 4.3 节 离线环境与单点登录部署',
+          content: '离线部署规范：企业版系统支持离线局域网环境一键安装，镜像打包提供 Docker Registry 导入。'
+        }
+      ]
+    } else if (text.includes('格式') || text.includes('切片') || text.includes('更新') || text.includes('审核') || text.includes('时效') || text.includes('生效') || text.includes('硬盘') || text.includes('固态') || text.includes('机械')) {
+      mockResponseText = '建议部署在**固态硬盘（SSD）**上。在普通机械硬盘上部署会导致向量检索的 I/O 延迟显著增加，在大并发时容易引发查询超时，从而拖慢客服的整体响应时间。'
+      mockSources = [
+        {
+          docName: '企业系统介绍.pdf',
+          section: '第 5.1 节 硬件资源与存储推荐',
+          content: '存储介质要求：生产环境必须配置企业级 SSD（读写速度 > 500MB/s），以支撑高频高吞吐向量检索及数据库频繁落盘读写。'
+        }
+      ]
+    } else if (text.includes('大小') || text.includes('限制') || text.includes('限制吗')) {
+      mockResponseText = '系统对单文档大小限制为 50MB。建议将超长文档按章节拆分后再行切片，以保证向量定位精度和回答匹配度。'
+      mockSources = [
+        {
+          docName: '产品功能手册与 FAQ',
+          section: '第 1.2 节 文件上传与切片限制',
+          content: '单文件最大支持 50MB，推荐格式包含 PDF、Markdown、Docx。'
+        }
+      ]
+    } else {
+      mockResponseText = `根据企业知识库检索：针对您所咨询的“${text}”，系统已准备好标准应答建议。您可以直接采纳或导入修改后发给访客。`
+      mockSources = [
+        {
+          docName: '产品功能手册与 FAQ',
+          section: '通用客服知识库',
+          content: '提供企业软件标准功能与咨询的规范解答。'
+        }
+      ]
+    }
+
+    // 无论当前草稿卡片是否开启，直接刷新为对应提问的最新建议
+    aiDraft.value = {
+      targetQuestion: msg.content,
+      content: mockResponseText,
+      score: '98.5%',
+      sources: mockSources
+    }
+
+    generatingMsgIndex.value = null
+    scrollToBottom()
+    ElMessage.success('已生成针对该问题的 AI 协同回复建议草稿')
+  }, 350)
+}
+
+// 重新生成当前草稿卡片的 AI 建议回复
+const regenerateDraft = () => {
+  if (!aiDraft.value) return
+
+  isRegeneratingDraft.value = true
+
+  setTimeout(() => {
+    const text = aiDraft.value.targetQuestion || ''
+    let mockResponseText = ''
+    let mockSources = []
+
+    if (text.includes('部署') || text.includes('环境') || text.includes('硬件') || text.includes('离线')) {
+      mockResponseText = '🤖【AI 深度检索优化】：企业私有化部署支持**完全离线/物理隔离环境**。部署依赖包与 Milvus/Qdrant 镜像可采用离线 TAR 包导入，支持对接企业内部 LDAP 统一账户认证，并提供完整的 Shell 自动化部署脚本。'
+      mockSources = [
+        {
+          docName: '企业系统介绍.pdf',
+          section: '第 4.3 节 离线环境与单点登录部署',
+          content: '离线部署规范：企业版系统支持离线局域网环境一键安装，镜像打包提供 Docker Registry 导入。'
+        }
+      ]
+    } else if (text.includes('格式') || text.includes('切片') || text.includes('更新') || text.includes('审核') || text.includes('时效') || text.includes('生效') || text.includes('硬盘') || text.includes('固态') || text.includes('机械')) {
+      mockResponseText = '🤖【AI 深度检索优化】：对于硬件部署介质，**强烈建议使用 SSD 固态硬盘**。相比于机械硬盘（HDD），固态硬盘可提供 >500MB/s 的读写速度与极佳的随机 I/O，可让 Milvus 检索段落定位降至数十毫秒，而普通机械硬盘会导致高并发请求排队与数据库写入阻塞。'
+      mockSources = [
+        {
+          docName: '企业系统介绍.pdf',
+          section: '第 5.1 节 硬件资源与存储推荐',
+          content: '存储介质要求：生产环境必须配置企业级 SSD（读写速度 > 500MB/s），以支撑高频高吞吐向量检索及数据库频繁落盘读写。'
+        }
+      ]
+    } else if (text.includes('大小') || text.includes('限制') || text.includes('限制吗')) {
+      mockResponseText = '🤖【AI 深度检索优化】：系统对单文档大小硬限制为 50MB。建议将长文档切分为不超过 10MB 的章节文件进行分批切片，这样能够显著提升 LLM 语义片段召回的准确性与召回质量。'
+      mockSources = [
+        {
+          docName: '产品功能手册与 FAQ',
+          section: '第 1.2 节 文件上传与切片限制',
+          content: '单文件最大支持 50MB，推荐格式包含 PDF、Markdown、Docx。'
+        }
+      ]
+    } else {
+      mockResponseText = `🤖【AI 深度检索优化】：针对您咨询的“${text}”，已扩大向量检索窗口并重新排列 Top-K 召回段落，优化了建议答复句式。`
+      mockSources = [
+        {
+          docName: '产品功能手册与 FAQ',
+          section: '通用客服知识库',
+          content: '提供企业软件标准功能与咨询的规范解答。'
+        }
+      ]
+    }
+
+    aiDraft.value = {
+      targetQuestion: text,
+      content: mockResponseText,
+      score: '99.2%', // 更新匹配分值
+      sources: mockSources
+    }
+
+    isRegeneratingDraft.value = false
+    ElMessage.success('AI 已重新检索并生成更精准的回复建议')
+  }, 400)
 }
 
 // 释放接管后，如果需要，AI 直接补齐回复
@@ -632,8 +793,7 @@ const importDraftToInput = () => {
   if (!aiDraft.value) return
   // 清除 markdown 标记导入
   inputMessage.value = aiDraft.value.content.replace(/\*\*/g, '')
-  aiDraft.value = null
-  ElMessage.success('已导入输入框，您可以进行编辑修改')
+  ElMessage.success('已导入输入框，您可以对照着进行编辑修改')
 }
 
 // 发送手写人工客服消息
@@ -683,7 +843,14 @@ const sendMessage = () => {
 }
 
 const openSourceModal = (src) => {
-  activeSource.value = src
+  const kbNameMap = {
+    '企业系统介绍.pdf': '「企业级部署知识库」',
+    '产品功能手册与 FAQ': '「智能客服常用知识库」'
+  }
+  activeSource.value = {
+    ...src,
+    kbName: src.kbName || kbNameMap[src.docName] || '「智能客服常用知识库」'
+  }
   isModalVisible.value = true
 }
 
@@ -923,7 +1090,18 @@ onMounted(() => {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+}
+
+.assist-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.assist-switch-label {
+  font-size: 13px;
+  color: #64748b;
 }
 
 .messages-container {
@@ -1074,6 +1252,146 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.bubble-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-row.user .bubble-wrapper {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.message-row.assistant .bubble-wrapper {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+/* 浮动微胶囊工具栏 */
+.bubble-floating-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transform: scale(0.92) translateY(2px);
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+/* 鼠标悬停在消息行上，或者包含 loading 状态时显现 */
+.message-row:hover .bubble-floating-actions,
+.bubble-floating-actions:has(.is-loading) {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* 悬浮操作按钮通用规范 */
+.float-action-btn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.float-action-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* AI 建议胶囊高亮风格 */
+.float-action-btn.ai-action-btn {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.float-action-btn.ai-action-btn:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+  color: #166534;
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.18);
+}
+
+.float-action-btn.ai-action-btn .btn-icon {
+  color: #16a34a;
+  font-size: 13px;
+}
+
+/* 纯图标微按钮 */
+.float-action-btn.icon-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  color: #64748b;
+}
+
+.float-action-btn.icon-btn:hover {
+  color: #0f172a;
+}
+
+.float-action-btn.icon-btn.is-liked {
+  color: #eab308;
+  background: #fefce8;
+  border-color: #fde047;
+}
+
+/* loading 动画 */
+.float-action-btn.is-loading .btn-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 针对提问标记 */
+.draft-target-question {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #bbf7d0;
+  font-size: 12px;
+}
+.target-q-tag {
+  background: #16a34a;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.target-q-text {
+  color: #15803d;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .msg-actions {
