@@ -155,25 +155,6 @@
             </div>
 
             <div class="bubble-wrapper">
-              <!-- 访客气泡左侧悬浮操作栏（鼠标悬停消息行时优雅浮现，不破坏对话纯粹感） -->
-              <div v-if="msg.role === 'user'" class="bubble-floating-actions user-floating-actions">
-                <el-tooltip content="针对此问题生成 AI 协同回复建议" placement="top" :show-after="200">
-                  <button 
-                    class="float-action-btn ai-action-btn"
-                    :class="{ 'is-loading': generatingMsgIndex === index }"
-                    @click="generateDraftForMessage(msg, index)"
-                  >
-                    <el-icon class="btn-icon"><MagicStick /></el-icon>
-                    <span>AI 建议</span>
-                  </button>
-                </el-tooltip>
-                <el-tooltip content="复制问题" placement="top" :show-after="200">
-                  <button class="float-action-btn icon-btn" @click="copyText(msg.content)">
-                    <el-icon><CopyDocument /></el-icon>
-                  </button>
-                </el-tooltip>
-              </div>
-
               <!-- 消息气泡主体 -->
               <div class="bubble">
                 <div class="msg-text" v-html="formatMessage(msg.content)"></div>
@@ -197,25 +178,58 @@
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- 助理/客服气泡右侧悬浮操作栏 -->
-              <div v-if="msg.role === 'assistant'" class="bubble-floating-actions assistant-floating-actions">
-                <el-tooltip content="复制回答" placement="top" :show-after="200">
-                  <button class="float-action-btn icon-btn" @click="copyText(msg.content)">
-                    <el-icon><CopyDocument /></el-icon>
-                  </button>
-                </el-tooltip>
-                <el-tooltip content="点赞收藏" placement="top" :show-after="200">
-                  <button 
-                    class="float-action-btn icon-btn" 
-                    :class="{ 'is-liked': msg.liked }" 
-                    @click="toggleLike(msg)"
-                  >
-                    <el-icon><Star /></el-icon>
-                  </button>
-                </el-tooltip>
               </div>
+            </div>
+
+            <!-- 客户消息外部操作栏 (复制 & AI 建议，位于气泡外部左下角) -->
+            <div v-if="msg.role === 'user'" class="user-action-bar">
+              <el-tooltip content="生成 AI 协同回复建议" placement="top" :show-after="200">
+                <button 
+                  class="user-action-btn ai-action-btn" 
+                  :class="{ 'is-loading': generatingMsgIndex === index }" 
+                  @click="generateDraftForMessage(msg, index)"
+                >
+                  <el-icon class="btn-icon"><MagicStick /></el-icon>
+                  <span>AI 建议</span>
+                </button>
+              </el-tooltip>
+              <el-tooltip content="复制问题" placement="top" :show-after="200">
+                <button class="user-action-btn icon-btn" @click="copyText(msg.content)">
+                  <el-icon><CopyDocument /></el-icon>
+                </button>
+              </el-tooltip>
+            </div>
+
+            <!-- 气泡外部反馈栏 (针对 AI 自动回复，支持数据埋点统计) -->
+            <div v-if="msg.role === 'assistant' && !msg.isHumanAgent" class="bubble-feedback-bar">
+              <el-tooltip content="复制回答" placement="top" :show-after="200">
+                <button class="feedback-icon-btn" @click.stop="copyText(msg.content)">
+                  <el-icon><CopyDocument /></el-icon>
+                </button>
+              </el-tooltip>
+              <el-tooltip content="回答有帮助 (点赞)" placement="top" :show-after="200">
+                <button 
+                  class="feedback-icon-btn" 
+                  :class="{ 'active-like': msg.feedback === 'like' }" 
+                  @click.stop="handleFeedback(msg, 'like')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="currentColor">
+                    <path d="M2 21h3V10H2v11zM22 11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 2 7.58 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+                  </svg>
+                </button>
+              </el-tooltip>
+              <el-tooltip content="回答不准确 (点踩)" placement="top" :show-after="200">
+                <button 
+                  class="feedback-icon-btn" 
+                  :class="{ 'active-dislike': msg.feedback === 'dislike' }" 
+                  @click.stop="handleFeedback(msg, 'dislike')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="currentColor">
+                    <path d="M22 3h-3v11h3V3zM2 13c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 22l5.59-5.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2H6c-.83 0-1.54.5-1.84 1.22L1.14 10.27c-.09.23-.14.47-.14.73v2z"/>
+                  </svg>
+                </button>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -374,7 +388,7 @@ import {
   Expand, Fold, Search, Delete, MoreFilled, 
   Service, DocumentChecked, Document, Promotion, 
   User, RefreshRight, InfoFilled, UserFilled, WarningFilled, Plus,
-  MagicStick, Check, Edit, CopyDocument, Star
+  MagicStick, Check, Edit, CopyDocument
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -859,9 +873,13 @@ const copyText = (txt) => {
   ElMessage.success('已复制到剪贴板')
 }
 
-const toggleLike = (msg) => {
-  msg.liked = !msg.liked
-  if (msg.liked) ElMessage.success('反馈已记录')
+const handleFeedback = (msg, type) => {
+  if (msg.feedback === type) {
+    // 再次点击取消
+    msg.feedback = null
+  } else {
+    msg.feedback = type
+  }
 }
 
 const formatMessage = (txt) => {
@@ -1203,6 +1221,135 @@ onMounted(() => {
 .message-row.human-agent .bubble {
   background: #eff6ff;
   border-color: #bfdbfe;
+}
+
+/* AI 自动回复气泡外部的反馈栏排版 */
+.bubble-feedback-bar {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-right: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 客户消息外部操作栏排版 */
+.user-action-bar {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  padding-left: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 鼠标悬停在消息行上，或者包含 loading 状态时优雅浮现 */
+.message-row:hover .bubble-feedback-bar,
+.message-row:hover .user-action-bar,
+.user-action-bar:has(.is-loading) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.user-action-btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.user-action-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+  transform: translateY(-1px);
+}
+
+.user-action-btn.ai-action-btn {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.user-action-btn.ai-action-btn:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+  color: #166534;
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.12);
+}
+
+.user-action-btn.ai-action-btn .btn-icon {
+  color: #16a34a;
+  font-size: 13px;
+}
+
+.user-action-btn.icon-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  color: #94a3b8;
+}
+
+.user-action-btn.icon-btn:hover {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+.user-action-btn.is-loading .btn-icon {
+  animation: spin 1s linear infinite;
+}
+
+.feedback-icon-btn {
+  border: none;
+  background: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 14px;
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.feedback-icon-btn:hover {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+/* 点赞与点踩高亮颜色 */
+.feedback-icon-btn.active-like {
+  color: #22c55e !important;
+  background: #f0fdf4 !important;
+}
+
+.feedback-icon-btn.active-dislike {
+  color: #ef4444 !important;
+  background: #fef2f2 !important;
 }
 
 /* AI 字段引用与交互 */
